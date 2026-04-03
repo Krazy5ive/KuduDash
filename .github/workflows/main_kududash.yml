@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: '22.x'
 
-       - name: Install backend dependencies
+      - name: Install backend dependencies
         working-directory: backend
         run: npm install
 
