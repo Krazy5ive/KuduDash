@@ -8,7 +8,7 @@ const vendorSchema = new Schema(
 
         //Business profile
         businessName: {type: String, required: true, trim: true},
-        description: {typr: String, trim: true},
+        description: {type: String, trim: true},
         logo: {type: String}, //URL
         bannerImage: {type: String}, //URL
         location: {type: String, trim: true}, //eg. Matrix Food Court, Shop 3
