@@ -15,6 +15,10 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
+app.get("/api/test", (req, res) => {
+  res.json({ message: "API is working!" });
+});
+
 app.use("/api/students", studentRoutes);
 app.use("/api/vendors", vendorRoutes);
 
