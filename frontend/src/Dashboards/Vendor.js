@@ -41,11 +41,19 @@ const VendorDashboard = () => {
   };
 
   const handleMarkReady = (index) => {
-    const updated = [...incomingOrders];
-    updated[index].status = "ready";
-    setIncomingOrders(updated);
-  };
+  const updated = [...incomingOrders];
+  updated[index].status = "ready";
+  setIncomingOrders(updated);
 
+  if ("speechSynthesis" in window) {
+    const studentName = updated[index].student;
+    const utterance = new SpeechSynthesisUtterance(`${studentName}'s order is ready`);
+    utterance.lang = "en-US";
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
+  }
+};
   const toggleMenuItem = (id) => {
     setMenuItems(prev =>
       prev.map(item => (item.id === id ? { ...item, on: !item.on } : item))
