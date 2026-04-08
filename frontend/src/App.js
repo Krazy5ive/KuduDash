@@ -4,6 +4,10 @@ import { AnimatePresence } from "framer-motion";
 import Login from "./Login";
 import Vibe from "./Vibe";
 
+import Student from "./Dashboards/Student";
+import Vendor from "./Dashboards/Vendor";
+import Admin from "./Dashboards/Admin";
+
 function App() {
   const location = useLocation();
 
@@ -12,6 +16,9 @@ function App() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Login />} />
         <Route path="/vibe" element={<Vibe />} />
+        <Route path="/student" element={<Student />} />
+        <Route path="/vendor" element={<Vendor />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </AnimatePresence>
   );

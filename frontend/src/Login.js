@@ -10,7 +10,6 @@ const Login = () => {
   const [codeSent, setCodeSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isNewUser, setIsNewUser] = useState(null); // null = unknown, true = new, false = returning
 
   const handleSendCode = async () => {
     if (!email) return setError("Please enter your email.");
@@ -31,9 +30,6 @@ const Login = () => {
 
       if (res.ok) {
         setCodeSent(true);
-        // Auth0 doesn't tell us if user is new, so we infer after code is sent
-        // replace this with a real check from backend
-        setIsNewUser(null);
       }
     } catch (err) {
       setError("Failed to send code. Please try again.");
@@ -73,7 +69,7 @@ const Login = () => {
     >
       <section className="login__card">
         <header className="login__header">
-          <span className="login__logo" aria-hidden="true"></span>
+          <figure className="login__logo" aria-hidden="true"></figure>
           <h1 className="login__title">KuduDash</h1>
         </header>
 
@@ -89,7 +85,6 @@ const Login = () => {
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
-                setIsNewUser(null);
               }}
               onKeyDown={(e) => e.key === "Enter" && handleSendCode()}
             />
