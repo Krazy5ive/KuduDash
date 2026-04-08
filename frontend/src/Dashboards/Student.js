@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+
 import "./Student.css";
 import { useAuth0 } from "@auth0/auth0-react";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 
 const Dashboard = () => {
   const { user, logout } = useAuth0();
@@ -44,11 +45,28 @@ const Dashboard = () => {
   };
 
   const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  };
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+};
+
+const speakGreeting = () => {
+  const greeting = getGreeting();
+  if ("speechSynthesis" in window) {
+    const utterance = new SpeechSynthesisUtterance(greeting);
+    utterance.lang = "en-US";
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
+  }
+  return greeting;
+};
+
+//This triggers the voice when the page loads
+useEffect(() => {
+  speakGreeting();
+}, []);
 
   const readyCount = activeOrders.filter(o => o.status === "ready").length;
   const greetingMessage = `${getGreeting()}, ${user?.given_name || "Student"} — ${readyCount} order${readyCount !== 1 ? "s are" : " is"} ready for pickup.`;
