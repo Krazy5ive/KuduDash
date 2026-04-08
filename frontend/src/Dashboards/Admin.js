@@ -47,37 +47,19 @@ const AdminDashboard = () => {
     { vendor: "FreshBowl Co.", orders: "76", revenue: "R6,120", avgOrder: "R81", compliance: "100%" },
   ];
 
-  const handleApproveVendor = (id) => {
-    setVendors(prev =>
-      prev.map(vendor =>
-        vendor.id === id ? { ...vendor, status: "active" } : vendor
-      )
-    );
-  };
+  const updateVendorStatus = (id, status) => {
+  setVendors(prev =>
+    prev.map(vendor => vendor.id === id ? { ...vendor, status } : vendor)
+  );
+};
 
-  const handleSuspendVendor = (id) => {
-    setVendors(prev =>
-      prev.map(vendor =>
-        vendor.id === id ? { ...vendor, status: "suspended" } : vendor
-      )
-    );
-  };
+const handleApproveVendor = (id) => updateVendorStatus(id, "active");
+const handleSuspendVendor = (id) => updateVendorStatus(id, "suspended");
+const handleReinstateVendor = (id) => updateVendorStatus(id, "active");
 
-  const handleReinstateVendor = (id) => {
-    setVendors(prev =>
-      prev.map(vendor =>
-        vendor.id === id ? { ...vendor, status: "active" } : vendor
-      )
-    );
-  };
-
-  const handleExportCSV = () => {
-    alert("Export CSV (demo)");
-  };
-
-  const handleExportPDF = () => {
-    alert("Export PDF (demo)");
-  };
+  const handleExport = (format) => {
+  alert(`Export ${format.toUpperCase()} (demo)`);
+}; 
 
   const handleLogout = () => {
     logout({ returnTo: window.location.origin });
@@ -301,13 +283,13 @@ const AdminDashboard = () => {
                 Sales per vendor — this week
               </h2>
               <div style={{ display: "flex", gap: "8px" }}>
-                <button className="kd-btn" onClick={handleExportCSV}>
-                  Export CSV
-                </button>
-                <button className="kd-btn" onClick={handleExportPDF}>
-                  Export PDF
-                </button>
-              </div>
+ <button className="kd-btn" onClick={() => handleExport("csv")}>
+    Export CSV
+  </button>
+  <button className="kd-btn" onClick={() => handleExport("pdf")}>
+    Export PDF
+  </button>
+</div> 
             </div>
             <table className="kd-table">
               <thead>
