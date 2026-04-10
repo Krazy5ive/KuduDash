@@ -1,303 +1,347 @@
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap');
 
-/* RESET */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* APP BACKGROUND */
+/* ----- LAYOUT (shared by all dashboards) ----- */
 .kd-app {
   font-family: 'DM Sans', sans-serif;
-  background: radial-gradient(circle at center, #1e293b, #0f172a);
+  background: radial-gradient(circle at top left, #1e293b, #0f172a);
   min-height: 100vh;
   color: #e2e8f0;
 }
 
-/* SIDEBAR */
 .kd-sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  width: 70px;
+  width: 220px;
   height: 100vh;
-  padding: 20px 0;
-
+  background: rgba(255, 255, 255, 0.03);
+  border-right: 1px solid rgba(110, 231, 183, 0.1);
+  backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
-
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border-right: 1px solid rgba(110, 231, 183, 0.1);
-
-  transition: width 0.25s ease;
+  padding: 24px 0;
+  z-index: 100;
 }
 
-.kd-sidebar.expanded {
-  width: 220px;
-}
-
-/* LOGO (PLAYFUL) */
 .kd-logo {
-  font-family: 'Baloo 2', sans-serif;
-  font-size: 24px;
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
   font-weight: 700;
-  padding: 0 20px 20px;
-
   background: linear-gradient(to right, #6ee7b7, #6366f1);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-
+  padding: 0 20px 24px;
   border-bottom: 1px solid rgba(110, 231, 183, 0.1);
+  letter-spacing: -0.5px;
 }
 
-/* NAV */
 .kd-nav {
+  padding: 16px 0;
   flex: 1;
-  margin-top: 10px;
 }
 
 .kd-nav-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-
-  padding: 12px 18px;
-  width: 100%;
-
-  background: none;
-  border: none;
+  gap: 10px;
+  padding: 10px 20px;
+  color: #475569;
+  font-size: 13.5px;
   cursor: pointer;
-
-  transition: all 0.2s ease;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
 }
 
-/* ICON */
-.kd-icon {
-  width: 20px;
-  height: 20px;
-  stroke: #6ee7b7;
-  stroke-width: 1.8;
-  fill: none;
-}
-
-/* NAV TEXT */
-.kd-nav-text {
-  opacity: 0;
-  transform: translateX(-8px);
-  transition: all 0.2s ease;
-
-  font-size: 14px;
-  font-weight: 500;
-
-  background: linear-gradient(to right, #6ee7b7, #6366f1);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.kd-sidebar.expanded .kd-nav-text {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-/* HOVER */
 .kd-nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.kd-nav-item:hover .kd-nav-text {
-  filter: brightness(1.2);
-}
-
-/* ACTIVE */
 .kd-nav-item.active {
-  border-left: 2px solid #6ee7b7;
-  background: rgba(110, 231, 183, 0.08);
+  color: #6ee7b7;
+  border-left-color: #6ee7b7;
+  background: rgba(110, 231, 183, 0.06);
 }
 
-/* MAIN */
+.kd-logout {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(110, 231, 183, 0.1);
+}
+
 .kd-main {
-  margin-left: 70px;
-  padding: 32px;
-  transition: margin-left 0.25s ease;
-}
-
-.kd-sidebar.expanded ~ .kd-main {
   margin-left: 220px;
+  padding: 32px;
+  min-height: 100vh;
 }
 
-/* TOP BAR */
 .kd-topbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 32px;
 }
 
-/* PAGE TITLE */
 .kd-page-title {
   font-family: 'Syne', sans-serif;
   font-size: 26px;
   font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #e2e8f0;
 }
 
 .kd-page-sub {
   font-size: 13px;
-  color: #64748b;
+  color: #475569;
+  margin-top: 2px;
 }
 
-/* ✅ SECTION TITLE (Restaurants etc.) */
-.kd-section-title {
-  font-family: 'Baloo 2', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-
-  background: linear-gradient(to right, #6ee7b7, #6366f1);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-
-  margin-bottom: 16px;
-}
-
-/* PROFILE AVATAR */
 .kd-avatar {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-
+  background: linear-gradient(to bottom right, #6ee7b7, #6366f1);
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: 'Syne', sans-serif;
+}
 
+/* ----- STATS & CARDS ----- */
+.kd-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.kd-stat {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(110, 231, 183, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(6px);
+}
+
+.kd-stat-label {
+  font-size: 11px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+
+.kd-stat-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: #e2e8f0;
+  letter-spacing: -1px;
+}
+
+.kd-stat-delta {
+  font-size: 12px;
+  color: #6ee7b7;
+  margin-top: 4px;
+}
+
+.kd-stat-delta.neg {
+  color: #f87171;
+}
+
+.kd-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.kd-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(110, 231, 183, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(6px);
+}
+
+.kd-card-title {
   font-family: 'Syne', sans-serif;
   font-size: 14px;
-  font-weight: 700;
-
-  background: linear-gradient(to bottom right, #6ee7b7, #6366f1);
-  color: #0f172a;
-
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-  cursor: pointer;
-
-  transition: all 0.2s ease;
-}
-
-.kd-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(110, 231, 183, 0.5);
-}
-
-/* GRID */
-.kd-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
-}
-
-/* VENDOR CARD */
-.kd-vendor-card {
-  padding: 20px;
-  border-radius: 14px;
-
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(110, 231, 183, 0.1);
-  backdrop-filter: blur(8px);
-
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.kd-vendor-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-}
-
-.kd-vendor-name {
-  font-size: 16px;
   font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 16px;
+  letter-spacing: -0.2px;
 }
 
-.kd-vendor-category {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 6px;
+.kd-full {
+  grid-column: 1 / -1;
 }
 
-/* MENU VIEW */
-.kd-menu-view {
+/* ----- ORDER ITEMS ----- */
+.kd-order-item {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* BACK BUTTON */
-.kd-back-btn {
-  background: none;
-  border: none;
-  color: #6ee7b7;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-/* MENU GRID */
-.kd-menu-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
-}
-
-/* MENU CARD */
-.kd-menu-card {
-  padding: 16px;
-  border-radius: 12px;
-
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(110, 231, 183, 0.1);
-  backdrop-filter: blur(8px);
-
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  transition: all 0.2s ease;
-}
-
-.kd-menu-card:hover {
-  transform: translateY(-3px);
-}
-
-/* MENU HEADER */
-.kd-menu-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* BUTTON */
-.kd-btn {
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
+.kd-order-item:last-child {
+  border-bottom: none;
+}
 
-  border: none;
-  cursor: pointer;
+.kd-order-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
 
-  font-size: 13px;
+.kd-order-name {
+  font-size: 13.5px;
+  color: #e2e8f0;
   font-weight: 500;
+}
 
-  transition: all 0.2s ease;
+.kd-order-vendor {
+  font-size: 12px;
+  color: #475569;
+  margin-top: 2px;
+}
+
+/* ----- BADGES ----- */
+.kd-badge {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.badge-ready {
+  background: rgba(110, 231, 183, 0.12);
+  color: #6ee7b7;
+}
+
+.badge-prep {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+}
+
+.badge-received {
+  background: rgba(255, 255, 255, 0.06);
+  color: #475569;
+}
+
+.badge-missed {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+/* ----- CHART ----- */
+.kd-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 100px;
+  padding-top: 8px;
+}
+
+.kd-chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.kd-chart-bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+  transition: height 0.4s;
+}
+
+.kd-chart-lbl {
+  font-size: 10px;
+  color: #475569;
+}
+
+/* ----- TABLE ----- */
+.kd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.kd-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.kd-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+}
+
+.kd-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ----- BUTTONS ----- */
+.kd-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #94a3b8;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.kd-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
 }
 
 .kd-btn.primary {
   background: linear-gradient(to right, #6ee7b7, #6366f1);
   color: #0f172a;
+  border: none;
+  font-weight: 600;
 }
 
 .kd-btn.primary:hover {
-  transform: translateY(-1px);
   opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.kd-btn.danger {
+  border-color: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+}
+
+.kd-btn.danger:hover {
+  background: rgba(248, 113, 113, 0.08);
 }
