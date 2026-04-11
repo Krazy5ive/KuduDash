@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require('express');
 const cors = require('cors');
 const { auth } = require('express-oauth2-jwt-bearer');
@@ -15,7 +16,7 @@ const checkJwt = auth({
 });
 
 // Routes
-const authRoutes = require("./routes/auth.routes");
+const authRoutes = require("./src/routes/auth.routes");
 app.use("/api/auth", authRoutes);
 
 module.exports = app;
