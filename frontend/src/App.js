@@ -16,9 +16,9 @@ function App() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Login />} />
         <Route path="/vibe" element={<Vibe />} />
-        <Route path="/student" element={<Student />} />
-        <Route path="/vendor" element={<Vendor />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/dashboard/student" element={<Student />} />
+        <Route path="/dashboard/vendor" element={<Vendor />} />
+        <Route path="/dashboard/admin" element={<Admin />} />
       </Routes>
     </AnimatePresence>
   );
