@@ -11,9 +11,11 @@ app.use(express.json());
 // Auth0 JWT check
 const checkJwt = auth({
   audience: process.env.AUTH0_AUDIENCE,
-  issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}/`,
+  issuerBaseURL: process.env.AUTH0_DOMAIN,
 });
 
 // Routes
+const authRoutes = require("./routes/auth.routes");
+app.use("/api/auth", authRoutes);
 
 module.exports = app;
