@@ -24,6 +24,9 @@ app.use("/api/admins", adminRoutes);
 app.use("/api/menu", menuItemRoutes);
 app.use("/api/orders", orderRoutes);
 
+const authRoutes = require("./src/routes/auth.routes");
+app.use("/api/auth", authRoutes);
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
