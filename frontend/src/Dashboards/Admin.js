@@ -1,17 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import "./Admin.css";
-
-/* ──────────────────────────────────────────
-   SEED DATA
-────────────────────────────────────────── */
-
-const SEED_STUDENTS = [];
-
-const SEED_VENDORS = [];
-
-/* ──────────────────────────────────────────
-   HELPERS
-────────────────────────────────────────── */
 
 const initials = (name) =>
   name
@@ -26,10 +14,6 @@ const formatDate = (iso) =>
     month: "short",
     year: "numeric",
   });
-
-/* ──────────────────────────────────────────
-   STAT CARDS
-────────────────────────────────────────── */
 
 const StatsRow = ({ items, type }) => {
   const total    = items.length;
@@ -59,10 +43,6 @@ const StatsRow = ({ items, type }) => {
   );
 };
 
-/* ──────────────────────────────────────────
-   STUDENT DETAIL MODAL
-────────────────────────────────────────── */
-
 const StudentModal = ({ student, onClose }) => (
   <section
     className="kd-modal-overlay"
@@ -75,21 +55,17 @@ const StudentModal = ({ student, onClose }) => (
       <header>
         <h2 className="kd-modal-title" id="modal-title">Student profile</h2>
       </header>
-
       <figure className="kd-cell-name" style={{ marginBottom: "4px" }}>
-        <p className={`kd-cell-avatar green`} aria-hidden="true">{initials(student.name)}</p>
+        <p className={`kd-cell-avatar green`} aria-hidden="true">{initials(student.firstName + " " + student.lastName)}</p>
         <figcaption className="kd-cell-name-text">
-          <strong>{student.name}</strong>
+          <strong>{student.firstName} {student.lastName}</strong>
           <small className="kd-cell-subtext">{student.email}</small>
         </figcaption>
       </figure>
-
       <ul className="kd-detail-list" aria-label="Student details">
         {[
-          ["Student number", student.studentNo],
-          ["Faculty",        student.faculty],
-          ["Date joined",    formatDate(student.joined)],
-          ["Status",         student.status],
+          ["Date joined", formatDate(student.createdAt)],
+          ["Status", student.isActive ? "active" : "inactive"],
         ].map(([label, value]) => (
           <li className="kd-detail-row" key={label}>
             <p className="kd-detail-label">{label}</p>
@@ -101,17 +77,12 @@ const StudentModal = ({ student, onClose }) => (
           </li>
         ))}
       </ul>
-
       <footer className="kd-modal-footer">
         <button className="kd-btn ghost" onClick={onClose}>Close</button>
       </footer>
     </article>
   </section>
 );
-
-/* ──────────────────────────────────────────
-   VENDOR DETAIL MODAL
-────────────────────────────────────────── */
 
 const VendorModal = ({ vendor, onClose }) => (
   <section
@@ -125,22 +96,20 @@ const VendorModal = ({ vendor, onClose }) => (
       <header>
         <h2 className="kd-modal-title" id="vendor-modal-title">Vendor profile</h2>
       </header>
-
       <figure className="kd-cell-name" style={{ marginBottom: "4px" }}>
-        <p className="kd-cell-avatar purple" aria-hidden="true">{initials(vendor.name)}</p>
+        <p className="kd-cell-avatar purple" aria-hidden="true">{initials(vendor.businessName)}</p>
         <figcaption className="kd-cell-name-text">
-          <strong>{vendor.name}</strong>
+          <strong>{vendor.businessName}</strong>
           <small className="kd-cell-subtext">{vendor.email}</small>
         </figcaption>
       </figure>
-
       <ul className="kd-detail-list" aria-label="Vendor details">
         {[
-          ["Vendor number", vendor.vendorNo],
-          ["Category",      vendor.category],
-          ["Menu items",    vendor.items],
-          ["Date joined",   formatDate(vendor.joined)],
-          ["Status",        vendor.status],
+          ["Location", vendor.location],
+          ["Owner", `${vendor.ownerFirstName} ${vendor.ownerLastName}`],
+          ["Phone", vendor.phone],
+          ["Date joined", formatDate(vendor.createdAt)],
+          ["Status", vendor.status],
         ].map(([label, value]) => (
           <li className="kd-detail-row" key={label}>
             <p className="kd-detail-label">{label}</p>
@@ -152,7 +121,6 @@ const VendorModal = ({ vendor, onClose }) => (
           </li>
         ))}
       </ul>
-
       <footer className="kd-modal-footer">
         <button className="kd-btn ghost" onClick={onClose}>Close</button>
       </footer>
@@ -160,47 +128,52 @@ const VendorModal = ({ vendor, onClose }) => (
   </section>
 );
 
-/* ──────────────────────────────────────────
-   STUDENTS PAGE
-────────────────────────────────────────── */
-
 const StudentsPage = () => {
-  const [students, setStudents]       = useState(SEED_STUDENTS);
-  const [search, setSearch]           = useState("");
+  const [students, setStudents] = useState([]);
+  const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [viewingStudent, setViewingStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/students")
+      .then((res) => res.json())
+      .then((data) => {
+        setStudents(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   const filtered = useMemo(() => {
     return students.filter((s) => {
+      const fullName = `${s.firstName} ${s.lastName}`;
       const matchSearch =
-        s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.email.toLowerCase().includes(search.toLowerCase()) ||
-        s.studentNo.toLowerCase().includes(search.toLowerCase());
-      const matchStatus = filterStatus === "all" || s.status === filterStatus;
+        fullName.toLowerCase().includes(search.toLowerCase()) ||
+        s.email.toLowerCase().includes(search.toLowerCase());
+      const studentStatus = s.isActive ? "active" : "inactive";
+      const matchStatus = filterStatus === "all" || studentStatus === filterStatus;
       return matchSearch && matchStatus;
     });
   }, [students, search, filterStatus]);
 
   const toggleStatus = (id) => {
-    setStudents((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? { ...s, status: s.status === "active" ? "inactive" : "active" }
-          : s
-      )
-    );
+    fetch(`http://localhost:5000/api/students/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: !students.find((s) => s._id === id)?.isActive }),
+    })
+      .then((res) => res.json())
+      .then((updated) => {
+        setStudents((prev) => prev.map((s) => s._id === id ? updated : s));
+      });
   };
 
   return (
     <section aria-label="Students management">
-      <StatsRow items={[]} type="students" />
+      <StatsRow items={students.map(s => ({ status: s.isActive ? "active" : "inactive" }))} type="students" />
 
-      <form
-        className="kd-search-row"
-        role="search"
-        aria-label="Search and filter students"
-        onSubmit={(e) => e.preventDefault()}
-      >
+      <form className="kd-search-row" role="search" onSubmit={(e) => e.preventDefault()}>
         <section className="kd-search-wrap">
           <svg className="kd-search-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
@@ -209,21 +182,19 @@ const StudentsPage = () => {
           <input
             className="kd-search-input"
             type="search"
-            placeholder="Search by name, email or number…"
+            placeholder="Search by name or email…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Search students"
           />
         </section>
-
-        <ul className="kd-filter-list" aria-label="Student status filters">
-          {["all", "active", "inactive", "pending"].map((f) => (
+        <ul className="kd-filter-list">
+          {["all", "active", "inactive"].map((f) => (
             <li key={f}>
               <button
                 type="button"
                 className={`kd-filter-pill ${filterStatus === f ? "active" : ""}`}
                 onClick={() => setFilterStatus(f)}
-                aria-pressed={filterStatus === f}
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
               </button>
@@ -232,50 +203,42 @@ const StudentsPage = () => {
         </ul>
       </form>
 
-      <section className="kd-table-wrap" aria-label="Students table">
+      <section className="kd-table-wrap">
         <table className="kd-table">
           <thead>
             <tr>
-              <th scope="col">Student name</th>
-              <th scope="col">Student surname</th>
-              <th scope="col">Student email</th>
+              <th scope="col">First Name</th>
+              <th scope="col">Last Name</th>
+              <th scope="col">Email</th>
               <th scope="col">Status</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={5}>
-                  <p className="kd-empty-state" role="status">No students match your search.</p>
-                </td>
-              </tr>
+            {loading && (
+              <tr><td colSpan={5}><p className="kd-empty-state">Loading students...</p></td></tr>
+            )}
+            {!loading && filtered.length === 0 && (
+              <tr><td colSpan={5}><p className="kd-empty-state">No students found.</p></td></tr>
             )}
             {filtered.map((student) => (
-              <tr key={student.id}>
-                <td>
-                  {student.name.split(" ")[0] || student.name}
-                </td>
-                <td>{student.name.split(" ").slice(1).join(" ") || "-"}</td>
+              <tr key={student._id}>
+                <td>{student.firstName}</td>
+                <td>{student.lastName}</td>
                 <td>{student.email}</td>
                 <td>
-                  <small className={`kd-badge ${student.status}`}>{student.status}</small>
+                  <small className={`kd-badge ${student.isActive ? "active" : "inactive"}`}>
+                    {student.isActive ? "active" : "inactive"}
+                  </small>
                 </td>
                 <td>
                   <section className="kd-table-actions">
+                    <button className="kd-action-btn view" onClick={() => setViewingStudent(student)}>View</button>
                     <button
-                      className="kd-action-btn view"
-                      onClick={() => setViewingStudent(student)}
-                      aria-label={`View ${student.name}`}
+                      className={`kd-action-btn ${student.isActive ? "suspend" : "restore"}`}
+                      onClick={() => toggleStatus(student._id)}
                     >
-                      View
-                    </button>
-                    <button
-                      className={`kd-action-btn ${student.status === "active" ? "suspend" : "restore"}`}
-                      onClick={() => toggleStatus(student.id)}
-                      aria-label={`${student.status === "active" ? "Suspend" : "Restore"} ${student.name}`}
-                    >
-                      {student.status === "active" ? "Suspend" : "Restore"}
+                      {student.isActive ? "Suspend" : "Restore"}
                     </button>
                   </section>
                 </td>
@@ -286,56 +249,58 @@ const StudentsPage = () => {
       </section>
 
       {viewingStudent && (
-        <StudentModal
-          student={viewingStudent}
-          onClose={() => setViewingStudent(null)}
-        />
+        <StudentModal student={viewingStudent} onClose={() => setViewingStudent(null)} />
       )}
     </section>
   );
 };
 
-/* ──────────────────────────────────────────
-   VENDORS PAGE
-────────────────────────────────────────── */
-
 const VendorsPage = () => {
-  const [vendors, setVendors]         = useState(SEED_VENDORS);
-  const [search, setSearch]           = useState("");
+  const [vendors, setVendors] = useState([]);
+  const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [viewingVendor, setViewingVendor] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/vendors")
+      .then((res) => res.json())
+      .then((data) => {
+        setVendors(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   const filtered = useMemo(() => {
     return vendors.filter((v) => {
       const matchSearch =
-        v.name.toLowerCase().includes(search.toLowerCase()) ||
-        v.email.toLowerCase().includes(search.toLowerCase()) ||
-        v.vendorNo.toLowerCase().includes(search.toLowerCase());
+        v.businessName.toLowerCase().includes(search.toLowerCase()) ||
+        v.email.toLowerCase().includes(search.toLowerCase());
       const matchStatus = filterStatus === "all" || v.status === filterStatus;
       return matchSearch && matchStatus;
     });
   }, [vendors, search, filterStatus]);
 
   const toggleStatus = (id) => {
-    setVendors((prev) =>
-      prev.map((v) =>
-        v.id === id
-          ? { ...v, status: v.status === "active" ? "inactive" : "active" }
-          : v
-      )
-    );
+    const vendor = vendors.find((v) => v._id === id);
+    const newStatus = vendor.status === "active" ? "suspended" : "active";
+    fetch(`http://localhost:5000/api/vendors/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    })
+      .then((res) => res.json())
+      .then((updated) => {
+        setVendors((prev) => prev.map((v) => v._id === id ? updated : v));
+      });
   };
 
   return (
     <section aria-label="Vendors management">
-      <StatsRow items={[]} type="vendors" />
+      <StatsRow items={vendors} type="vendors" />
 
-      <form
-        className="kd-search-row"
-        role="search"
-        aria-label="Search and filter vendors"
-        onSubmit={(e) => e.preventDefault()}
-      >
+      <form className="kd-search-row" role="search" onSubmit={(e) => e.preventDefault()}>
         <section className="kd-search-wrap">
           <svg className="kd-search-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
@@ -344,21 +309,19 @@ const VendorsPage = () => {
           <input
             className="kd-search-input"
             type="search"
-            placeholder="Search by name, email or number…"
+            placeholder="Search by name or email…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Search vendors"
           />
         </section>
-
-        <ul className="kd-filter-list" aria-label="Vendor status filters">
-          {["all", "active", "inactive", "pending"].map((f) => (
+        <ul className="kd-filter-list">
+          {["all", "active", "pending", "suspended"].map((f) => (
             <li key={f}>
               <button
                 type="button"
                 className={`kd-filter-pill ${filterStatus === f ? "active" : ""}`}
                 onClick={() => setFilterStatus(f)}
-                aria-pressed={filterStatus === f}
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
               </button>
@@ -367,58 +330,47 @@ const VendorsPage = () => {
         </ul>
       </form>
 
-      <section className="kd-table-wrap" aria-label="Vendors table">
+      <section className="kd-table-wrap">
         <table className="kd-table">
           <thead>
             <tr>
-              <th scope="col">Vendor</th>
-              <th scope="col">Vendor no.</th>
-              <th scope="col">Category</th>
-              <th scope="col">Items</th>
+              <th scope="col">Business Name</th>
+              <th scope="col">Owner</th>
+              <th scope="col">Email</th>
+              <th scope="col">Location</th>
               <th scope="col">Status</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={7}>
-                  <p className="kd-empty-state" role="status">No vendors match your search.</p>
-                </td>
-              </tr>
+            {loading && (
+              <tr><td colSpan={6}><p className="kd-empty-state">Loading vendors...</p></td></tr>
+            )}
+            {!loading && filtered.length === 0 && (
+              <tr><td colSpan={6}><p className="kd-empty-state">No vendors found.</p></td></tr>
             )}
             {filtered.map((vendor) => (
-              <tr key={vendor.id}>
+              <tr key={vendor._id}>
                 <td>
                   <figure className="kd-cell-name">
-                    <p className="kd-cell-avatar purple" aria-hidden="true">
-                      {initials(vendor.name)}
-                    </p>
+                    <p className="kd-cell-avatar purple" aria-hidden="true">{initials(vendor.businessName)}</p>
                     <figcaption className="kd-cell-name-text">
-                      <strong>{vendor.name}</strong>
-                      <small className="kd-cell-subtext">{vendor.email}</small>
+                      <strong>{vendor.businessName}</strong>
                     </figcaption>
                   </figure>
                 </td>
-                <td>{vendor.vendorNo}</td>
-                <td>{vendor.category}</td>
-                <td>{vendor.items}</td>
+                <td>{vendor.ownerFirstName} {vendor.ownerLastName}</td>
+                <td>{vendor.email}</td>
+                <td>{vendor.location}</td>
                 <td>
                   <small className={`kd-badge ${vendor.status}`}>{vendor.status}</small>
                 </td>
                 <td>
                   <section className="kd-table-actions">
-                    <button
-                      className="kd-action-btn view"
-                      onClick={() => setViewingVendor(vendor)}
-                      aria-label={`View ${vendor.name}`}
-                    >
-                      View
-                    </button>
+                    <button className="kd-action-btn view" onClick={() => setViewingVendor(vendor)}>View</button>
                     <button
                       className={`kd-action-btn ${vendor.status === "active" ? "suspend" : "restore"}`}
-                      onClick={() => toggleStatus(vendor.id)}
-                      aria-label={`${vendor.status === "active" ? "Suspend" : "Restore"} ${vendor.name}`}
+                      onClick={() => toggleStatus(vendor._id)}
                     >
                       {vendor.status === "active" ? "Suspend" : "Restore"}
                     </button>
@@ -431,18 +383,11 @@ const VendorsPage = () => {
       </section>
 
       {viewingVendor && (
-        <VendorModal
-          vendor={viewingVendor}
-          onClose={() => setViewingVendor(null)}
-        />
+        <VendorModal vendor={viewingVendor} onClose={() => setViewingVendor(null)} />
       )}
     </section>
   );
 };
-
-/* ──────────────────────────────────────────
-   PLACEHOLDER PAGE
-────────────────────────────────────────── */
 
 const PlaceholderPage = ({ label }) => (
   <section aria-label={`${label} placeholder`} className="kd-placeholder">
@@ -454,10 +399,6 @@ const PlaceholderPage = ({ label }) => (
     <p>This section is not yet implemented.</p>
   </section>
 );
-
-/* ──────────────────────────────────────────
-   NAV CONFIG
-────────────────────────────────────────── */
 
 const NAV_ITEMS = [
   {
@@ -543,26 +484,20 @@ const PAGE_SUBTITLES = {
   settings:  "System configuration",
 };
 
-/* ──────────────────────────────────────────
-   ADMIN ROOT
-────────────────────────────────────────── */
-
 const Admin = () => {
   const [expanded, setExpanded] = useState(false);
   const [activeNav, setActiveNav] = useState("students");
 
   const renderPage = () => {
     switch (activeNav) {
-      case "students":  return <StudentsPage />;
-      case "vendors":   return <VendorsPage />;
-      default:          return <PlaceholderPage label={NAV_ITEMS.find((n) => n.id === activeNav)?.label ?? activeNav} />;
+      case "students": return <StudentsPage />;
+      case "vendors":  return <VendorsPage />;
+      default:         return <PlaceholderPage label={NAV_ITEMS.find((n) => n.id === activeNav)?.label ?? activeNav} />;
     }
   };
 
   return (
     <main className="kd-app">
-
-      {/* SIDEBAR */}
       <aside
         className={`kd-sidebar ${expanded ? "expanded" : ""}`}
         onMouseEnter={() => setExpanded(true)}
@@ -572,7 +507,6 @@ const Admin = () => {
         <header className="kd-logo" aria-label="KuduDash admin portal">
           {expanded ? "KuduDash" : "KD"}
         </header>
-
         <nav className="kd-nav" aria-label="Main menu">
           <ul className="kd-nav-list">
             {NAV_ITEMS.map((item) => (
@@ -591,9 +525,7 @@ const Admin = () => {
         </nav>
       </aside>
 
-      {/* MAIN */}
       <section className="kd-main">
-
         <header className="kd-topbar">
           <section>
             <h1 className="kd-page-title">
@@ -603,9 +535,7 @@ const Admin = () => {
           </section>
           <figure className="kd-avatar" aria-label="Admin profile"></figure>
         </header>
-
         {renderPage()}
-
       </section>
     </main>
   );
