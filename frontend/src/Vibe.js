@@ -17,7 +17,7 @@ const Vibe = () => {
   });
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
-  const [syncing, setSyncing] = useState(true); // hides UI while we check the DB
+  const [syncing, setSyncing] = useState(true);
 
   // ── Sync user after Auth0 redirect ────────────────────────────
   useEffect(() => {
@@ -45,12 +45,14 @@ const Vibe = () => {
         const data = await res.json();
 
         if (!data.isNewUser) {
-          // Returning user — skip role selection entirely
-          if (data.role === "vendor" && data.vendorStatus === "pending") {
-            navigate("/vendor/pending");
-          } else {
-            navigate(`/dashboard/${data.role}`);
-          }
+          // Returning user — go straight to their dashboard, passing name in state
+          navigate(`/dashboard/${data.role}`, {
+            state: {
+              ownerFirstName: data.ownerFirstName || data.firstName || "",
+              ownerLastName:  data.ownerLastName  || data.lastName  || "",
+              vendorId:       data.userId || "",
+            },
+          });
           return;
         }
 
@@ -59,11 +61,12 @@ const Vibe = () => {
 
       } catch (err) {
         console.error("Sync failed:", err);
-        setSyncing(false); // still show the page if sync fails
+        setSyncing(false);
       }
     };
 
     syncUser();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, isAuthenticated]);
 
   // ── Role selection ─────────────────────────────────────────────
@@ -115,11 +118,14 @@ const Vibe = () => {
         return;
       }
 
-      if (selectedRole === "vendor") {
-        navigate("/vendor/pending");
-      } else {
-        navigate(`/dashboard/${selectedRole}`);
-      }
+      // Navigate to dashboard, passing name in state
+      navigate(`/dashboard/${selectedRole}`, {
+        state: {
+          ownerFirstName: data.ownerFirstName || body.given_name  || "",
+          ownerLastName:  data.ownerLastName  || body.family_name || "",
+          vendorId:       data.userId || "",
+        },
+      });
 
     } catch (err) {
       setError("Network error, please try again");

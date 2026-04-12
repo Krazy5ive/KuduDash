@@ -3,16 +3,16 @@ const { Schema } = mongoose;
 
 const menuItemSchema = new Schema(
     {
-        vendor: {type: Schema.Types.ObjectId, ref: "Vendor", require: true},
-        name: {type: String, required: true, trim: true},
-        description: {type: String, trim: true},
-        price: {type: Number, required: true, min: 0}, //in ZAR cents
-        price: {type: String}, //URL
-        category: { type: String, trim: true}, //Breakfast, Lunch, Dinner, Snacks
+        vendor: { type: Schema.Types.ObjectId, ref: "Vendor", required: true },
+        name: { type: String, required: true, trim: true },
+        description: { type: String, trim: true },
+        price: { type: Number, required: true, min: 0 },
+        imageUrl: { type: String, default: "" },
+        category: { type: String, trim: true },
 
-        //Availabity
-        isAvailable: {type: Boolean, default: true},
-        isSoldOut: {type: Boolean, default: false},
+        // Availability
+        isAvailable: { type: Boolean, default: true },
+        isSoldOut: { type: Boolean, default: false },
 
         allergens: {
             type: [String],
@@ -20,7 +20,7 @@ const menuItemSchema = new Schema(
             default: [],
         },
 
-        preparationTimeMinutes: { type: Number, default: 10},
+        preparationTimeMinutes: { type: Number, default: 10 },
     },
     {
         timestamps: true,
@@ -28,7 +28,7 @@ const menuItemSchema = new Schema(
     }
 );
 
-menuItemSchema.index({vendor: 1, isAvailable: 1});
-menuItemSchema.index({name: "text", description: "text"});
+menuItemSchema.index({ vendor: 1, isAvailable: 1 });
+menuItemSchema.index({ name: "text", description: "text" });
 
 module.exports = mongoose.model("menuItem", menuItemSchema);
