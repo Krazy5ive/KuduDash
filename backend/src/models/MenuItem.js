@@ -30,5 +30,6 @@ const menuItemSchema = new Schema(
 
 menuItemSchema.index({ vendor: 1, isAvailable: 1 });
 menuItemSchema.index({ name: "text", description: "text" });
+menuItemSchema.index({ vendor: 1, name: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
 
 module.exports = mongoose.model("menuItem", menuItemSchema);
