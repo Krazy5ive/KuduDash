@@ -301,3 +301,134 @@
   transform: translateY(-1px);
   opacity: 0.9;
 }
+
+.kd-menu-image {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+}
+
+.kd-vendor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.12s;
+}
+.kd-vendor-card:hover {
+  border-color: rgba(255,255,255,0.25);
+  transform: translateY(-2px);
+}
+.kd-vendor-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.kd-vendor-logo-wrap {
+  width: 48px; height: 48px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.07);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.kd-vendor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.kd-tag { font-size: 11px; opacity: 0.6; }
+.kd-open  { font-size: 11px; color: #4ade80; }
+.kd-closed{ font-size: 11px; color: #f87171; }
+.kd-rating{ font-size: 12px; opacity: 0.7; }
+.kd-star  { color: #facc15; }
+
+article.kd-menu-card figure {
+  margin: 0;
+  background: rgba(51, 46, 103, 0.372);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+article.kd-menu-card figure img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+article.kd-menu-card section {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+article.kd-menu-card footer button {
+  padding: 7px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+article.kd-menu-card footer button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Category filter bar */
+.kd-category-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.kd-category-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.kd-category-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.kd-category-chip.active {
+  background: #00e5a0;       /* your teal accent */
+  border-color: #00e5a0;
+  color: #04342C;            /* dark text on teal */
+}
+
+.kd-category-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 5px;
+}
+
+.kd-category-chip.active .kd-category-count {
+  background: rgba(4, 52, 44, 0.3);
+  color: #04342C;
+}

@@ -7,7 +7,7 @@ const { auth } = require("express-oauth2-jwt-bearer");
 
 const checkJwt = auth({
   audience:      process.env.AUTH0_AUDIENCE,
-  issuerBaseURL: process.env.AUTH0_DOMAIN,
+  issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}`,
 });
 
 // ── POST /api/auth/sync ────────────────────────────────────────────────────
@@ -23,26 +23,27 @@ router.post("/sync", checkJwt, async (req, res) => {
       Admin.findOne({   $or: [{ authProviderId: sub }, { email: normalizedEmail }] }),
     ]);
 
-    // ADD THESE
-    console.log("sub:", sub);
-    console.log("email:", normalizedEmail);
-    console.log("student found:", student);
-    console.log("vendor found:", vendor);
-    console.log("admin found:", admin);
-
     const existingUser = student || vendor || admin;
-    const role = student ? "student" : vendor ? "vendor" : "admin";
+    const role = student ? "student" : vendor ? "vendor" : admin ? "admin" : null;
 
-    console.log("existingUser:", existingUser);
-    console.log("resolved role:", role);
-    console.log("isNewUser:", !existingUser);
-    
     if (existingUser) {
       return res.json({
         isNewUser: false,
         role,
         userId:    existingUser._id,
-        ...(vendor && { vendorStatus: vendor.status }),
+        ...(vendor && {
+          vendorStatus:   vendor.status,
+          ownerFirstName: vendor.ownerFirstName,
+          ownerLastName:  vendor.ownerLastName,
+        }),
+        ...(student && {
+          firstName: student.firstName,
+          lastName:  student.lastName,
+        }),
+        ...(admin && {
+          firstName: admin.firstName,
+          lastName:  admin.lastName,
+        }),
       });
     }
 
@@ -130,9 +131,11 @@ router.post("/register/vendor", checkJwt, async (req, res) => {
     });
 
     res.status(201).json({
-      role:         "vendor",
-      userId:       vendor._id,
-      vendorStatus: vendor.status,
+      role:           "vendor",
+      userId:         vendor._id,
+      vendorStatus:   vendor.status,
+      ownerFirstName: vendor.ownerFirstName,
+      ownerLastName:  vendor.ownerLastName,
     });
   } catch (err) {
     if (err.code === 11000) {

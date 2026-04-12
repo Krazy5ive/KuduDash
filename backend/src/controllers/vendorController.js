@@ -2,7 +2,7 @@ const Vendor = require("../models/Vendor");
 
 const getAllVendors = async (req, res) => {
   try {
-    const vendors = await Vendor.find({ status: "active" });
+    const vendors = await Vendor.find({ isActive: true});
     res.json(vendors);
   } catch (err) {
     res.status(500).json({ message: err.message });

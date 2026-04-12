@@ -1,11 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Student.css";
+
+
+const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
 const Student = () => {
   const [expanded, setExpanded] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
+  const [vendors, setVendors] = useState([]);
+  const [menuItems, setMenuItems] = useState([]);
+  const [loadingVendors, setLoadingVendors] = useState(true);
+  const [loadingMenu, setLoadingMenu] = useState(false);
+  const [error, setError] = useState(null);
+  const [activeCategory, setActiveCategory] = useState("All");
 
-  // Vendors removed; variable no longer needed.
+ // fetch vendors
+  useEffect(() => {
+    fetch("/api/vendors")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch vendors");
+        return res.json();
+      })
+      .then((data) => {
+        setVendors(data);
+        setLoadingVendors(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoadingVendors(false);
+      });
+  }, []);
+
+  //fetch menu when vendor is selected
+  useEffect(() => {
+    if (!selectedVendor) return;
+    setLoadingMenu(true);
+    setMenuItems([]);
+
+    fetch(`/api/menu?vendor=${selectedVendor._id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch menu");
+        return res.json();
+      })
+      .then((data) => {
+        setMenuItems(data);
+        setLoadingMenu(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoadingMenu(false);
+      });
+  }, [selectedVendor]);
+
+  const filteredItems =
+    activeCategory === "All"
+      ? menuItems
+      : menuItems.filter((item) => item.category === activeCategory);
 
   return (
     <main className="kd-app">
@@ -20,9 +70,7 @@ const Student = () => {
           {expanded ? "KuduDash" : "KD"}
         </header>
 
-
         <nav className="kd-nav">
-
           {/* Overview button with grid icon */}
           <button className="kd-nav-item">
             <svg viewBox="0 0 24 24" className="kd-icon">
@@ -75,11 +123,10 @@ const Student = () => {
 
       {/* MAIN */}
       <section className="kd-main">
-
         <header className="kd-topbar">
           <section>
             <h1 className="kd-page-title" style={{ fontFamily: "'Baloo 2', sans-serif" }}>
-              {selectedVendor ? selectedVendor.name : "Vendors"}
+              {selectedVendor ? selectedVendor.businessName : "Vendors"}
             </h1>
             <p className="kd-page-sub">
               {selectedVendor
@@ -93,31 +140,102 @@ const Student = () => {
 
         {!selectedVendor ? (
           <section className="kd-grid">
-            {/* No vendors to display */}
+            {loadingVendors ? (
+              <p className="kd-state-msg">Loading vendors...</p>
+            ) : error ? (
+              <p className="kd-state-msg kd-error">{error}</p>
+            ) : vendors.length === 0 ? (
+              <p className="kd-state-msg">No vendors available.</p>
+            ) : (
+              vendors.map((vendor) => (
+                <article
+                  key={vendor._id}
+                  className="kd-vendor-card"
+                  onClick={() => setSelectedVendor(vendor)}
+                >
+                <header>
+                  <figure>
+                    {vendor.logo
+                      ? <img src={vendor.logo} alt={vendor.businessName} className="kd-vendor-logo" />
+                      : <abbr title={vendor.businessName}>{vendor.businessName[0]}</abbr>
+                    }
+                  </figure>
+                  <hgroup>
+                    <h2>{vendor.businessName}</h2>
+                    <p><small>{vendor.location}</small></p>
+                  </hgroup>
+                </header>
+                <p>{vendor.description}</p>
+                </article>
+              ))
+            )}
           </section>
         ) : (
           <section className="kd-menu-view">
-
+            <nav className="kd-menu-nav" aria-label="Menu navigation"></nav>
             <button
               className="kd-back-btn"
-              onClick={() => setSelectedVendor(null)}
+              onClick={() => {
+                setSelectedVendor(null);
+                setMenuItems([]);
+                setActiveCategory("All");
+              }}
             >
               ← Back
             </button>
 
-            <section className="kd-menu-grid">
-              {selectedVendor.menu.map((item, i) => (
-                <article key={i} className="kd-menu-card">
-                  <header className="kd-menu-header">
-                    <h2>{item.name}</h2>
-                    <data value={item.price}>{item.price}</data>
-                  </header>
+            {/* CATEGORY FILTER BAR */}
+            <nav className="kd-category-bar" aria-label="Filter by category">
+              {["All", ...CATEGORIES].map((cat) => {
+                const count =
+                  cat === "All"
+                    ? menuItems.length
+                    : menuItems.filter((i) => i.category === cat).length;
+                return (
+                <button
+                  key={cat}
+                  className={`kd-category-chip ${activeCategory === cat ? "active" : ""}`}
+                  onClick={() => setActiveCategory(cat)}
+                  aria-pressed={activeCategory === cat}
+                >
+                  {cat}
+                  <output className="kd-category-count">{count}</output>
+                </button>
+                );
+              })}
+            </nav>
 
-                  <footer>
-                    <button className="kd-btn primary">Add</button>
-                  </footer>
-                </article>
-              ))}
+            {loadingMenu && <p className="kd-state-msg">Loading menu...</p>}
+
+            <section className="kd-menu-grid" aria-label="Menu items">
+              {!loadingMenu && filteredItems.length === 0 ? (
+                <p className="kd-state-msg">No items in this category.</p>
+              ) : (
+                filteredItems.map((item) => (
+                  <article key={item._id} className="kd-menu-card">
+                    {/* Menu item image */}
+                    <figure>
+                      {item.imageUrl
+                        ? <img src={item.imageUrl} alt={item.name} className="kd-menu-image" loading="lazy" />
+                        : null
+                      }
+                    </figure>
+                  
+                    <section>
+                      <h2>{item.name}</h2>
+                      <p>{item.description}</p>
+                      {item.category && ( 
+                        <p><small>{item.category}</small></p>
+                      )}
+                    </section>
+
+                    <footer>
+                      <data value={item.price}>R{item.price}</data>
+                      <button className="kd-btn">+ Add</button>
+                    </footer>
+                  </article>
+                ))
+              )}
             </section>
 
           </section>

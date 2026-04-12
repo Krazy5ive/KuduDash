@@ -1,40 +1,110 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./Vendor.css";
+import { useLocation } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
 const EMPTY_FORM = {
   name: "",
   description: "",
-  price: "",
+  priceCents: 0,
   category: "Food",
   imageUrl: "",
 };
 
 const Vendor = () => {
+  const { getAccessTokenSilently, loginWithRedirect } = useAuth0();
+  const location = useLocation();
+
+  // Name + vendorId passed from Vibe.js via navigate(..., { state })
+  const firstName = location.state?.ownerFirstName || "";
+  const lastName  = location.state?.ownerLastName  || "";
+  const vendorId  = location.state?.vendorId       || "";
+  const initials  = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "?";
+
   const [expanded, setExpanded] = useState(false);
   const [activeNav, setActiveNav] = useState("menu");
   const [menuItems, setMenuItems] = useState([]);
+  const [orders, setOrders] = useState([]);
 
-  /* Modal state: null | "add" | "edit" | "delete" */
   const [modal, setModal] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [formError, setFormError] = useState("");  // ← new
 
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    fetchMenuItems();
+    fetchOrders();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const getToken = () =>
+    getAccessTokenSilently({
+      authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
+    });
+
+  const fetchMenuItems = async () => {
+    if (!vendorId) return;
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/menu?vendor=${vendorId}`, {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      const data = await res.json();
+      // Normalise _id → id so the rest of the UI works unchanged
+      setMenuItems(data.map((item) => ({ ...item, id: item._id })));
+    } catch (err) {
+      console.error("Error fetching menu items:", err);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const token = await getAccessTokenSilently({
+        authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
+      });
+      const response = await fetch("/api/orders", {
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      const data = await response.json();
+      setOrders(data);
+    } catch (error) {
+      if (error.error === "consent_required" || error.error === "login_required") {
+        loginWithRedirect({
+          authorizationParams: {
+            audience: process.env.REACT_APP_AUTH0_AUDIENCE,
+            prompt: "consent",
+          },
+        });
+      } else {
+        console.error("Error fetching orders:", error);
+      }
+    }
+  };
 
   /* ── Helpers ── */
 
   const openAddModal = () => {
     setFormData(EMPTY_FORM);
     setEditingId(null);
+    setFormError("");  // ← clear error on open
     setModal("add");
   };
 
   const openEditModal = (item) => {
-    setFormData({ ...item });
+    setFormData({
+      name:        item.name        || "",
+      description: item.description || "",
+      priceCents:  Math.round((Number(item.price) || 0) * 100),
+      category:    item.category    || "Food",
+      imageUrl:    item.imageUrl    || "",
+    });
     setEditingId(item.id);
+    setFormError("");  // ← clear error on open
     setModal("edit");
   };
 
@@ -47,11 +117,36 @@ const Vendor = () => {
     setModal(null);
     setEditingId(null);
     setPendingDeleteId(null);
+    setFormError("");  // ← clear error on close
   };
 
   const handleFieldChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Capitec-style price input: store as integer cents, never touch floats
+  const handlePriceKeyDown = (e) => {
+    const allowed = ["Backspace", "Tab", "ArrowLeft", "ArrowRight"];
+    if (allowed.includes(e.key)) {
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        setFormData((prev) => ({
+          ...prev,
+          priceCents: Math.floor(prev.priceCents / 10),
+        }));
+      }
+      return;
+    }
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+      return;
+    }
+    e.preventDefault();
+    setFormData((prev) => ({
+      ...prev,
+      priceCents: prev.priceCents * 10 + parseInt(e.key, 10),
+    }));
   };
 
   const handleImageChange = (e) => {
@@ -64,29 +159,82 @@ const Vendor = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSubmitAdd = (e) => {
+  const handleSubmitAdd = async (e) => {
     e.preventDefault();
-    const newItem = { ...formData, id: Date.now() };
-    setMenuItems((prev) => [...prev, newItem]);
-    closeModal();
+    setFormError("");  // ← clear previous error
+    try {
+      const token = await getToken();
+      const { priceCents, ...rest } = formData;
+      const res = await fetch("/api/menu", {
+        method: "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...rest, price: priceCents / 100, vendor: vendorId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setFormError(data.message || "Something went wrong");  // ← show error in form
+        return;
+      }
+
+      await fetchMenuItems();
+      closeModal();
+    } catch (err) {
+      console.error("Error adding menu item:", err);
+      setFormError("Something went wrong. Please try again.");
+    }
   };
 
-  const handleSubmitEdit = (e) => {
+  const handleSubmitEdit = async (e) => {
     e.preventDefault();
-    setMenuItems((prev) =>
-      prev.map((item) => (item.id === editingId ? { ...formData, id: editingId } : item))
-    );
-    closeModal();
+    setFormError("");  // ← clear previous error
+    try {
+      const token = await getToken();
+      const { priceCents, ...rest } = formData;
+      const res = await fetch(`/api/menu/${editingId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...rest, price: priceCents / 100 }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setFormError(data.message || "Something went wrong");  // ← show error in form
+        return;
+      }
+
+      await fetchMenuItems();
+      closeModal();
+    } catch (err) {
+      console.error("Error updating menu item:", err);
+      setFormError("Something went wrong. Please try again.");
+    }
   };
 
-  const handleConfirmDelete = () => {
-    setMenuItems((prev) => prev.filter((item) => item.id !== pendingDeleteId));
-    closeModal();
+  const handleConfirmDelete = async () => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/menu/${pendingDeleteId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await fetchMenuItems();
+      closeModal();
+    } catch (err) {
+      console.error("Error deleting menu item:", err);
+    }
   };
 
   const pendingDeleteItem = menuItems.find((item) => item.id === pendingDeleteId);
 
-  /* ── Shared form markup (reused for add and edit) ── */
+  /* ── Shared form markup ── */
   const renderForm = (onSubmit) => (
     <form className="kd-form" onSubmit={onSubmit} noValidate>
 
@@ -95,7 +243,13 @@ const Vendor = () => {
           {modal === "add" ? "Add menu item" : "Edit menu item"}
         </legend>
 
-        {/* Item name */}
+        {/* ← Error banner — only shown when formError is set */}
+        {formError && (
+          <p className="kd-form-error" role="alert">
+            {formError}
+          </p>
+        )}
+
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-name">Name</label>
           <input
@@ -111,7 +265,6 @@ const Vendor = () => {
           />
         </section>
 
-        {/* Description */}
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-description">Description</label>
           <textarea
@@ -124,24 +277,22 @@ const Vendor = () => {
           />
         </section>
 
-        {/* Price */}
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-price">Price (R)</label>
           <input
             id="item-price"
             className="kd-input"
-            type="number"
+            type="text"
+            inputMode="numeric"
             name="price"
-            value={formData.price}
-            onChange={handleFieldChange}
+            value={(formData.priceCents / 100).toFixed(2)}
+            onKeyDown={handlePriceKeyDown}
+            onChange={() => {}}
             placeholder="0.00"
-            min="0"
-            step="0.01"
             required
           />
         </section>
 
-        {/* Category */}
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-category">Category</label>
           <select
@@ -157,7 +308,6 @@ const Vendor = () => {
           </select>
         </section>
 
-        {/* Image upload */}
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-image">Photo</label>
           <label className="kd-upload-area" htmlFor="item-image">
@@ -217,23 +367,7 @@ const Vendor = () => {
         </header>
 
         <nav className="kd-nav" aria-label="Main menu">
-          <ul className="kd-nav-list">
-            <li>
-              <button
-                className={`kd-nav-item ${activeNav === "overview" ? "active" : ""}`}
-                onClick={() => setActiveNav("overview")}
-                aria-current={activeNav === "overview" ? "page" : undefined}
-              >
-                <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true">
-                  <rect x="3" y="3" width="7" height="7" rx="2" />
-                  <rect x="14" y="3" width="7" height="7" rx="2" />
-                  <rect x="14" y="14" width="7" height="7" rx="2" />
-                  <rect x="3" y="14" width="7" height="7" rx="2" />
-                </svg>
-                {expanded && <p className="kd-nav-text">Overview</p>}
-              </button>
-            </li>
-
+          <ul>
             <li>
               <button
                 className={`kd-nav-item ${activeNav === "menu" ? "active" : ""}`}
@@ -301,10 +435,20 @@ const Vendor = () => {
               {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
             </h1>
             <p className="kd-page-sub">
-              {activeNav === "menu" ? "Manage what you sell" : "Coming soon"}
+              {activeNav === "menu"
+                ? "Manage what you sell"
+                : activeNav === "orders"
+                ? "View and manage customer orders"
+                : "Coming soon"}
             </p>
           </section>
-          <figure className="kd-avatar" aria-label="Vendor profile"></figure>
+          <figure
+            className="kd-avatar"
+            aria-label={`${firstName} ${lastName} profile`}
+            title={`${firstName} ${lastName}`}
+          >
+            {initials}
+          </figure>
         </header>
 
         {/* MENU PAGE */}
@@ -381,8 +525,51 @@ const Vendor = () => {
           </section>
         )}
 
+        {/* ORDERS PAGE */}
+        {activeNav === "orders" && (
+          <section aria-label="Orders management">
+            <header className="kd-menu-toprow">
+              <h2 className="kd-section-title">Customer Orders ({orders.length})</h2>
+            </header>
+
+            {orders.length === 0 ? (
+              <div className="kd-empty-state" role="status">
+                <svg className="kd-empty-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 2h12v20H6zM6 6h12" />
+                </svg>
+                <p>No orders yet</p>
+              </div>
+            ) : (
+              <ul className="kd-menu-grid" aria-label="Orders list">
+                {orders.map((order) => (
+                  <li key={order.id} className="kd-item-card">
+                    <div className="kd-item-body">
+                      <p className="kd-item-category">Order #{order.id}</p>
+                      <h3 className="kd-item-name">{order.customerName || "Customer"}</h3>
+                      {order.items && (
+                        <p className="kd-item-description">
+                          Items: {order.items.length} product(s)
+                        </p>
+                      )}
+                      <p className="kd-item-price">R{Number(order.total || 0).toFixed(2)}</p>
+                      <p className="kd-item-category" style={{ marginTop: "8px" }}>
+                        Status: {order.status || "pending"}
+                      </p>
+                      {order.createdAt && (
+                        <p className="kd-item-description">
+                          {new Date(order.createdAt).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
         {/* PLACEHOLDER FOR OTHER NAV ITEMS */}
-        {activeNav !== "menu" && (
+        {activeNav !== "menu" && activeNav !== "orders" && (
           <section aria-label={`${activeNav} placeholder`}>
             <p style={{ color: "#475569", fontSize: "14px" }}>
               The <strong>{activeNav}</strong> section is not yet implemented.

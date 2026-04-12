@@ -181,8 +181,8 @@
   align-items: center;
   justify-content: center;
 
-  font-family: 'Syne', sans-serif;
-  font-size: 14px;
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 15px;
   font-weight: 700;
 
   background: linear-gradient(to bottom right, #6ee7b7, #6366f1);
@@ -523,6 +523,16 @@
   gap: 10px;
   justify-content: flex-end;
   margin-top: 4px;
+}
+
+.kd-form-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #f87171;
+  line-height: 1.5;
 }
 
 /* DELETE CONFIRM */
