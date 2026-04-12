@@ -1,5 +1,14 @@
 const Student = require("../models/Student");
 
+const getAllStudents = async (req, res) => {
+  try {
+    const students = await Student.find();
+    res.json(students);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 const getStudentProfile = async (req, res) => {
   try {
     const student = await Student.findOne({ authProviderId: req.params.id });
@@ -30,4 +39,4 @@ const updateStudent = async (req, res) => {
   }
 };
 
-module.exports = { getStudentProfile, createStudent, updateStudent };
+module.exports = { getAllStudents, getStudentProfile, createStudent, updateStudent };
