@@ -32,6 +32,7 @@ const Vendor = () => {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [formError, setFormError] = useState("");  // ← new
 
   const fileInputRef = useRef(null);
 
@@ -90,6 +91,7 @@ const Vendor = () => {
   const openAddModal = () => {
     setFormData(EMPTY_FORM);
     setEditingId(null);
+    setFormError("");  // ← clear error on open
     setModal("add");
   };
 
@@ -102,6 +104,7 @@ const Vendor = () => {
       imageUrl:    item.imageUrl    || "",
     });
     setEditingId(item.id);
+    setFormError("");  // ← clear error on open
     setModal("edit");
   };
 
@@ -114,6 +117,7 @@ const Vendor = () => {
     setModal(null);
     setEditingId(null);
     setPendingDeleteId(null);
+    setFormError("");  // ← clear error on close
   };
 
   const handleFieldChange = (e) => {
@@ -157,6 +161,7 @@ const Vendor = () => {
 
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
+    setFormError("");  // ← clear previous error
     try {
       const token = await getToken();
       const { priceCents, ...rest } = formData;
@@ -168,16 +173,24 @@ const Vendor = () => {
         },
         body: JSON.stringify({ ...rest, price: priceCents / 100, vendor: vendorId }),
       });
-      if (!res.ok) throw new Error(await res.text());
+
+      if (!res.ok) {
+        const data = await res.json();
+        setFormError(data.message || "Something went wrong");  // ← show error in form
+        return;
+      }
+
       await fetchMenuItems();
       closeModal();
     } catch (err) {
       console.error("Error adding menu item:", err);
+      setFormError("Something went wrong. Please try again.");
     }
   };
 
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
+    setFormError("");  // ← clear previous error
     try {
       const token = await getToken();
       const { priceCents, ...rest } = formData;
@@ -189,11 +202,18 @@ const Vendor = () => {
         },
         body: JSON.stringify({ ...rest, price: priceCents / 100 }),
       });
-      if (!res.ok) throw new Error(await res.text());
+
+      if (!res.ok) {
+        const data = await res.json();
+        setFormError(data.message || "Something went wrong");  // ← show error in form
+        return;
+      }
+
       await fetchMenuItems();
       closeModal();
     } catch (err) {
       console.error("Error updating menu item:", err);
+      setFormError("Something went wrong. Please try again.");
     }
   };
 
@@ -222,6 +242,13 @@ const Vendor = () => {
         <legend className="kd-modal-title">
           {modal === "add" ? "Add menu item" : "Edit menu item"}
         </legend>
+
+        {/* ← Error banner — only shown when formError is set */}
+        {formError && (
+          <p className="kd-form-error" role="alert">
+            {formError}
+          </p>
+        )}
 
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-name">Name</label>
