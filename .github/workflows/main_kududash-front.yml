@@ -22,6 +22,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
+          cache: 'npm'
 
       - name: npm install and build
         run: |
@@ -55,6 +56,6 @@ jobs:
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'KuduDash-Front'
+          app-name: 'KuduDash-p'
           package: .
           publish-profile: ${{ secrets.AZURE_CRED }}
