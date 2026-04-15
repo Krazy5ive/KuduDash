@@ -1,0 +1,50 @@
+
+.kd-add-to-cart-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.kd-add-to-cart-btn {
+  padding: 8px 20px;
+  background: linear-gradient(to right, #6ee7b7, #6366f1);
+  border: none;
+  border-radius: 999px;
+  color: #0f172a;
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kd-add-to-cart-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.kd-add-to-cart-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kd-add-success {
+  font-size: 13px;
+  color: #6ee7b7;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  animation: fadeOut 2s ease forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
