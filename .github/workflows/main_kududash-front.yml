@@ -53,10 +53,8 @@ jobs:
         run: ls . -a
       
       - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'KuduDash-Front'
-          slot-name: 'Production'
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_ECDC9099578D403E8C8056017ECF7AA6 }}
