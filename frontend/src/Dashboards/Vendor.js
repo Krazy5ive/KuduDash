@@ -14,25 +14,30 @@ const EMPTY_FORM = {
 };
 
 const Vendor = () => {
-  const { getAccessTokenSilently, loginWithRedirect } = useAuth0();
+  const { getAccessTokenSilently, loginWithRedirect, logout } = useAuth0();
   const location = useLocation();
 
-  // Name + vendorId passed from Vibe.js via navigate(..., { state })
-  const firstName = location.state?.ownerFirstName || "";
-  const lastName  = location.state?.ownerLastName  || "";
-  const vendorId  = location.state?.vendorId       || "";
-  const initials  = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "?";
+  const firstName      = location.state?.ownerFirstName || "";
+  const lastName       = location.state?.ownerLastName  || "";
+  const vendorId       = location.state?.vendorId       || "";
+  const businessName   = location.state?.businessName   || "";
+  const description    = location.state?.description    || "";
+  const vendorLogo     = location.state?.logo           || "";
+  const vendorLocation = location.state?.location       || "";
+
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || "?";
 
   const [expanded, setExpanded] = useState(false);
   const [activeNav, setActiveNav] = useState("menu");
   const [menuItems, setMenuItems] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const [modal, setModal] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
-  const [formError, setFormError] = useState("");  // ← new
+  const [formError, setFormError] = useState("");
 
   const fileInputRef = useRef(null);
 
@@ -55,7 +60,6 @@ const Vendor = () => {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await res.json();
-      // Normalise _id → id so the rest of the UI works unchanged
       setMenuItems(data.map((item) => ({ ...item, id: item._id })));
     } catch (err) {
       console.error("Error fetching menu items:", err);
@@ -91,7 +95,7 @@ const Vendor = () => {
   const openAddModal = () => {
     setFormData(EMPTY_FORM);
     setEditingId(null);
-    setFormError("");  // ← clear error on open
+    setFormError("");
     setModal("add");
   };
 
@@ -104,7 +108,7 @@ const Vendor = () => {
       imageUrl:    item.imageUrl    || "",
     });
     setEditingId(item.id);
-    setFormError("");  // ← clear error on open
+    setFormError("");
     setModal("edit");
   };
 
@@ -117,7 +121,7 @@ const Vendor = () => {
     setModal(null);
     setEditingId(null);
     setPendingDeleteId(null);
-    setFormError("");  // ← clear error on close
+    setFormError("");
   };
 
   const handleFieldChange = (e) => {
@@ -125,7 +129,6 @@ const Vendor = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Capitec-style price input: store as integer cents, never touch floats
   const handlePriceKeyDown = (e) => {
     const allowed = ["Backspace", "Tab", "ArrowLeft", "ArrowRight"];
     if (allowed.includes(e.key)) {
@@ -161,7 +164,7 @@ const Vendor = () => {
 
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
-    setFormError("");  // ← clear previous error
+    setFormError("");
     try {
       const token = await getToken();
       const { priceCents, ...rest } = formData;
@@ -173,13 +176,11 @@ const Vendor = () => {
         },
         body: JSON.stringify({ ...rest, price: priceCents / 100, vendor: vendorId }),
       });
-
       if (!res.ok) {
         const data = await res.json();
-        setFormError(data.message || "Something went wrong");  // ← show error in form
+        setFormError(data.message || "Something went wrong");
         return;
       }
-
       await fetchMenuItems();
       closeModal();
     } catch (err) {
@@ -190,7 +191,7 @@ const Vendor = () => {
 
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
-    setFormError("");  // ← clear previous error
+    setFormError("");
     try {
       const token = await getToken();
       const { priceCents, ...rest } = formData;
@@ -202,13 +203,11 @@ const Vendor = () => {
         },
         body: JSON.stringify({ ...rest, price: priceCents / 100 }),
       });
-
       if (!res.ok) {
         const data = await res.json();
-        setFormError(data.message || "Something went wrong");  // ← show error in form
+        setFormError(data.message || "Something went wrong");
         return;
       }
-
       await fetchMenuItems();
       closeModal();
     } catch (err) {
@@ -232,47 +231,38 @@ const Vendor = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout({ logoutParams: { returnTo: window.location.origin } });
+  };
+
   const pendingDeleteItem = menuItems.find((item) => item.id === pendingDeleteId);
 
   /* ── Shared form markup ── */
   const renderForm = (onSubmit) => (
     <form className="kd-form" onSubmit={onSubmit} noValidate>
-
       <fieldset style={{ border: "none", display: "contents" }}>
         <legend className="kd-modal-title">
           {modal === "add" ? "Add menu item" : "Edit menu item"}
         </legend>
 
-        {/* ← Error banner — only shown when formError is set */}
         {formError && (
-          <p className="kd-form-error" role="alert">
-            {formError}
-          </p>
+          <p className="kd-form-error" role="alert">{formError}</p>
         )}
 
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-name">Name</label>
           <input
-            id="item-name"
-            className="kd-input"
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleFieldChange}
-            placeholder="e.g. Mango Smoothie"
-            required
-            autoComplete="off"
+            id="item-name" className="kd-input" type="text" name="name"
+            value={formData.name} onChange={handleFieldChange}
+            placeholder="e.g. Mango Smoothie" required autoComplete="off"
           />
         </section>
 
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-description">Description</label>
           <textarea
-            id="item-description"
-            className="kd-textarea"
-            name="description"
-            value={formData.description}
-            onChange={handleFieldChange}
+            id="item-description" className="kd-textarea" name="description"
+            value={formData.description} onChange={handleFieldChange}
             placeholder="A short description of the item…"
           />
         </section>
@@ -280,28 +270,16 @@ const Vendor = () => {
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-price">Price (R)</label>
           <input
-            id="item-price"
-            className="kd-input"
-            type="text"
-            inputMode="numeric"
-            name="price"
-            value={(formData.priceCents / 100).toFixed(2)}
-            onKeyDown={handlePriceKeyDown}
-            onChange={() => {}}
-            placeholder="0.00"
-            required
+            id="item-price" className="kd-input" type="text" inputMode="numeric"
+            name="price" value={(formData.priceCents / 100).toFixed(2)}
+            onKeyDown={handlePriceKeyDown} onChange={() => {}} placeholder="0.00" required
           />
         </section>
 
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-category">Category</label>
-          <select
-            id="item-category"
-            className="kd-select"
-            name="category"
-            value={formData.category}
-            onChange={handleFieldChange}
-          >
+          <select id="item-category" className="kd-select" name="category"
+            value={formData.category} onChange={handleFieldChange}>
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
@@ -312,11 +290,7 @@ const Vendor = () => {
           <label className="kd-label" htmlFor="item-image">Photo</label>
           <label className="kd-upload-area" htmlFor="item-image">
             {formData.imageUrl ? (
-              <img
-                src={formData.imageUrl}
-                alt="Preview of uploaded item"
-                className="kd-upload-preview"
-              />
+              <img src={formData.imageUrl} alt="Preview of uploaded item" className="kd-upload-preview" />
             ) : (
               <>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -329,25 +303,18 @@ const Vendor = () => {
             )}
           </label>
           <input
-            id="item-image"
-            className="kd-file-input"
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            onChange={handleImageChange}
+            id="item-image" className="kd-file-input" type="file"
+            accept="image/*" ref={fileInputRef} onChange={handleImageChange}
           />
         </section>
 
         <footer className="kd-form-footer">
-          <button type="button" className="kd-btn ghost" onClick={closeModal}>
-            Cancel
-          </button>
+          <button type="button" className="kd-btn ghost" onClick={closeModal}>Cancel</button>
           <button type="submit" className="kd-btn primary">
             {modal === "add" ? "Add item" : "Save changes"}
           </button>
         </footer>
       </fieldset>
-
     </form>
   );
 
@@ -365,80 +332,39 @@ const Vendor = () => {
         <header className="kd-logo" aria-label="KuduDash vendor portal">
           {expanded ? "KuduDash" : "KD"}
         </header>
-
         <nav className="kd-nav" aria-label="Main menu">
           <ul>
-            <li>
-              <button
-                className={`kd-nav-item ${activeNav === "menu" ? "active" : ""}`}
-                onClick={() => setActiveNav("menu")}
-                aria-current={activeNav === "menu" ? "page" : undefined}
-              >
-                <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true">
-                  <path d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                {expanded && <p className="kd-nav-text">Menu</p>}
-              </button>
-            </li>
-
-            <li>
-              <button
-                className={`kd-nav-item ${activeNav === "orders" ? "active" : ""}`}
-                onClick={() => setActiveNav("orders")}
-                aria-current={activeNav === "orders" ? "page" : undefined}
-              >
-                <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true">
-                  <path d="M6 2h12v20H6zM6 6h12" />
-                </svg>
-                {expanded && <p className="kd-nav-text">Orders</p>}
-              </button>
-            </li>
-
-            <li>
-              <button
-                className={`kd-nav-item ${activeNav === "customers" ? "active" : ""}`}
-                onClick={() => setActiveNav("customers")}
-                aria-current={activeNav === "customers" ? "page" : undefined}
-              >
-                <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true">
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M2 21c0-4 3.1-7 7-7h4c3.9 0 7 3 7 7" />
-                  <circle cx="19" cy="9" r="3" />
-                </svg>
-                {expanded && <p className="kd-nav-text">Customers</p>}
-              </button>
-            </li>
-
-            <li>
-              <button
-                className={`kd-nav-item ${activeNav === "reports" ? "active" : ""}`}
-                onClick={() => setActiveNav("reports")}
-                aria-current={activeNav === "reports" ? "page" : undefined}
-              >
-                <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true">
-                  <path d="M4 20V10M9 20V4M14 20v-6M19 20v-9" />
-                </svg>
-                {expanded && <p className="kd-nav-text">Reports</p>}
-              </button>
-            </li>
+            {[
+              { id: "menu",      label: "Menu",      icon: <path d="M4 6h16M4 12h16M4 18h16" /> },
+              { id: "orders",    label: "Orders",    icon: <path d="M6 2h12v20H6zM6 6h12" /> },
+              { id: "customers", label: "Customers", icon: <><circle cx="9" cy="7" r="4" /><path d="M2 21c0-4 3.1-7 7-7h4c3.9 0 7 3 7 7" /><circle cx="19" cy="9" r="3" /></> },
+              { id: "reports",   label: "Reports",   icon: <path d="M4 20V10M9 20V4M14 20v-6M19 20v-9" /> },
+            ].map(({ id, label, icon }) => (
+              <li key={id}>
+                <button
+                  className={`kd-nav-item ${activeNav === id ? "active" : ""}`}
+                  onClick={() => setActiveNav(id)}
+                  aria-current={activeNav === id ? "page" : undefined}
+                >
+                  <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true">{icon}</svg>
+                  {expanded && <p className="kd-nav-text">{label}</p>}
+                </button>
+              </li>
+            ))}
           </ul>
         </nav>
       </aside>
 
       {/* MAIN CONTENT */}
       <section className="kd-main">
-
-        {/* TOP BAR */}
         <header className="kd-topbar">
           <section>
             <h1 className="kd-page-title">
               {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
             </h1>
             <p className="kd-page-sub">
-              {activeNav === "menu"
-                ? "Manage what you sell"
-                : activeNav === "orders"
-                ? "View and manage customer orders"
+              {activeNav === "menu" ? "Manage what you sell"
+                : activeNav === "orders" ? "View and manage customer orders"
                 : "Coming soon"}
             </p>
           </section>
@@ -446,6 +372,8 @@ const Vendor = () => {
             className="kd-avatar"
             aria-label={`${firstName} ${lastName} profile`}
             title={`${firstName} ${lastName}`}
+            onClick={() => setProfileOpen(true)}
+            style={{ cursor: "pointer" }}
           >
             {initials}
           </figure>
@@ -454,35 +382,23 @@ const Vendor = () => {
         {/* MENU PAGE */}
         {activeNav === "menu" && (
           <section aria-label="Menu management">
-
             <header className="kd-menu-toprow">
               <h2 className="kd-section-title">Your items ({menuItems.length})</h2>
-              <button className="kd-btn primary" onClick={openAddModal}>
-                + Add item
-              </button>
+              <button className="kd-btn primary" onClick={openAddModal}>+ Add item</button>
             </header>
-
             <ul className="kd-menu-grid" aria-label="Menu items list">
-
               {menuItems.length === 0 && (
                 <li className="kd-empty-state" role="status">
                   <svg className="kd-empty-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 4v16M4 12h16" />
-                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 4v16M4 12h16" /><circle cx="12" cy="12" r="9" />
                   </svg>
                   <p>No items yet — add your first one!</p>
                 </li>
               )}
-
               {menuItems.map((item) => (
                 <li key={item.id} className="kd-item-card">
-
                   {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="kd-item-image"
-                    />
+                    <img src={item.imageUrl} alt={item.name} className="kd-item-image" />
                   ) : (
                     <figure className="kd-item-image-placeholder" aria-hidden="true">
                       <svg viewBox="0 0 24 24">
@@ -491,36 +407,18 @@ const Vendor = () => {
                       </svg>
                     </figure>
                   )}
-
                   <section className="kd-item-body">
                     <p className="kd-item-category">{item.category}</p>
                     <h3 className="kd-item-name">{item.name}</h3>
-                    {item.description && (
-                      <p className="kd-item-description">{item.description}</p>
-                    )}
+                    {item.description && <p className="kd-item-description">{item.description}</p>}
                     <p className="kd-item-price">R{Number(item.price).toFixed(2)}</p>
                   </section>
-
                   <footer className="kd-item-actions">
-                    <button
-                      className="kd-btn ghost"
-                      onClick={() => openEditModal(item)}
-                      aria-label={`Edit ${item.name}`}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="kd-btn danger"
-                      onClick={() => openDeleteModal(item.id)}
-                      aria-label={`Delete ${item.name}`}
-                    >
-                      Delete
-                    </button>
+                    <button className="kd-btn ghost" onClick={() => openEditModal(item)} aria-label={`Edit ${item.name}`}>Edit</button>
+                    <button className="kd-btn danger" onClick={() => openDeleteModal(item.id)} aria-label={`Delete ${item.name}`}>Delete</button>
                   </footer>
-
                 </li>
               ))}
-
             </ul>
           </section>
         )}
@@ -531,7 +429,6 @@ const Vendor = () => {
             <header className="kd-menu-toprow">
               <h2 className="kd-section-title">Customer Orders ({orders.length})</h2>
             </header>
-
             {orders.length === 0 ? (
               <div className="kd-empty-state" role="status">
                 <svg className="kd-empty-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -546,20 +443,10 @@ const Vendor = () => {
                     <div className="kd-item-body">
                       <p className="kd-item-category">Order #{order.id}</p>
                       <h3 className="kd-item-name">{order.customerName || "Customer"}</h3>
-                      {order.items && (
-                        <p className="kd-item-description">
-                          Items: {order.items.length} product(s)
-                        </p>
-                      )}
+                      {order.items && <p className="kd-item-description">Items: {order.items.length} product(s)</p>}
                       <p className="kd-item-price">R{Number(order.total || 0).toFixed(2)}</p>
-                      <p className="kd-item-category" style={{ marginTop: "8px" }}>
-                        Status: {order.status || "pending"}
-                      </p>
-                      {order.createdAt && (
-                        <p className="kd-item-description">
-                          {new Date(order.createdAt).toLocaleString()}
-                        </p>
-                      )}
+                      <p className="kd-item-category" style={{ marginTop: "8px" }}>Status: {order.status || "pending"}</p>
+                      {order.createdAt && <p className="kd-item-description">{new Date(order.createdAt).toLocaleString()}</p>}
                     </div>
                   </li>
                 ))}
@@ -568,7 +455,6 @@ const Vendor = () => {
           </section>
         )}
 
-        {/* PLACEHOLDER FOR OTHER NAV ITEMS */}
         {activeNav !== "menu" && activeNav !== "orders" && (
           <section aria-label={`${activeNav} placeholder`}>
             <p style={{ color: "#475569", fontSize: "14px" }}>
@@ -576,23 +462,17 @@ const Vendor = () => {
             </p>
           </section>
         )}
-
       </section>
 
       {/* ── ADD / EDIT MODAL ── */}
       {(modal === "add" || modal === "edit") && (
         <section
-          className="kd-modal-overlay"
-          role="dialog"
-          aria-modal="true"
+          className="kd-modal-overlay" role="dialog" aria-modal="true"
           aria-labelledby="modal-title"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
           <article className="kd-modal">
-            {modal === "add"
-              ? renderForm(handleSubmitAdd)
-              : renderForm(handleSubmitEdit)
-            }
+            {modal === "add" ? renderForm(handleSubmitAdd) : renderForm(handleSubmitEdit)}
           </article>
         </section>
       )}
@@ -600,35 +480,67 @@ const Vendor = () => {
       {/* ── DELETE CONFIRM MODAL ── */}
       {modal === "delete" && (
         <section
-          className="kd-modal-overlay"
-          role="dialog"
-          aria-modal="true"
+          className="kd-modal-overlay" role="dialog" aria-modal="true"
           aria-labelledby="delete-modal-title"
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
           <article className="kd-modal">
-
             <h2 className="kd-modal-title" id="delete-modal-title">Delete item</h2>
-
             <p className="kd-confirm-text">
               Are you sure you want to delete{" "}
-              <strong className="kd-confirm-name">
-                {pendingDeleteItem?.name}
-              </strong>
-              ? This action cannot be undone.
+              <strong className="kd-confirm-name">{pendingDeleteItem?.name}</strong>?
+              This action cannot be undone.
             </p>
-
             <footer className="kd-form-footer">
-              <button className="kd-btn ghost" onClick={closeModal}>
-                Cancel
-              </button>
-              <button className="kd-btn danger" onClick={handleConfirmDelete}>
-                Yes, delete
-              </button>
+              <button className="kd-btn ghost" onClick={closeModal}>Cancel</button>
+              <button className="kd-btn danger" onClick={handleConfirmDelete}>Yes, delete</button>
             </footer>
-
           </article>
         </section>
+      )}
+
+      {/* ── PROFILE SIDEBAR ── */}
+      {profileOpen && (
+        <aside className="kd-profile-sidebar open" aria-label="Vendor profile panel">
+          <header className="kd-profile-header">
+            <h2 className="kd-profile-title">My Profile</h2>
+            <button className="kd-profile-close" onClick={() => setProfileOpen(false)} aria-label="Close profile">✕</button>
+          </header>
+
+          <section className="kd-profile-avatar-wrap">
+            {vendorLogo ? (
+              <img src={vendorLogo} alt={businessName} className="kd-profile-photo" />
+            ) : (
+              <figure className="kd-profile-avatar">{initials}</figure>
+            )}
+          </section>
+
+          <ul className="kd-profile-details">
+            <li className="kd-profile-row">
+              <p className="kd-profile-label">Business name</p>
+              <p className="kd-profile-value">{businessName || "—"}</p>
+            </li>
+            <li className="kd-profile-row">
+              <p className="kd-profile-label">Description</p>
+              <p className="kd-profile-value kd-profile-value--wrap">{description || "—"}</p>
+            </li>
+            <li className="kd-profile-row">
+              <p className="kd-profile-label">Location</p>
+              <p className="kd-profile-value">{vendorLocation || "—"}</p>
+            </li>
+          </ul>
+
+          <footer className="kd-profile-footer">
+            <button className="kd-btn danger" style={{ width: "100%" }} onClick={handleLogout}>
+              Log out
+            </button>
+          </footer>
+        </aside>
+      )}
+
+
+      {profileOpen && (
+        <aside className="kd-profile-backdrop" onClick={() => setProfileOpen(false)} aria-hidden="true" tabIndex={-1} />
       )}
 
     </main>
