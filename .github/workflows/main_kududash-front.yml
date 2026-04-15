@@ -54,5 +54,5 @@ jobs:
         with:
           app-name: 'KuduDash-Front'
           slot-name: 'Production'
-          package: ./build
+          package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_ECDC9099578D403E8C8056017ECF7AA6 }}
