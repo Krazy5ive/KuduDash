@@ -1,35 +1,41 @@
 require("dotenv").config();
-const express = require('express');
-const cors = require('cors');
-const { auth } = require('express-oauth2-jwt-bearer');
+const express = require("express");
+const cors = require("cors");
+
+const menuItemRoutes = require("./src/routes/menuItemRoutes");
+const orderRoutes    = require("./src/routes/orderRoutes");
+const studentRoutes  = require("./src/routes/studentRoutes");
+const vendorRoutes   = require("./src/routes/vendorRoutes");
+const adminRoutes    = require("./src/routes/adminRoutes");
+const authRoutes     = require("./src/routes/auth.routes");
 
 const app = express();
 
 const allowedOrigins = [
-  'http://localhost:3000',
-  process.env.FRONTEND_URL
+  "http://localhost:3000",
+  process.env.FRONTEND_URL,
 ];
 
+// ── Middleware FIRST ─────────────────────────────
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     }
   }
 }));
 
 app.use(express.json());
 
-// Auth0 JWT check
-const checkJwt = auth({
-  audience: process.env.AUTH0_AUDIENCE,
-  issuerBaseURL: process.env.AUTH0_DOMAIN,
-});
-
-// Routes
-const authRoutes = require("./src/routes/auth.routes");
+// ── Routes SECOND ────────────────────────────────
 app.use("/api/auth", authRoutes);
+app.use("/api/menu-items", menuItemRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/students", studentRoutes);
+app.use("/api/vendors", vendorRoutes);
+app.use("/api/admin", adminRoutes);
 
 module.exports = app;
+console.log("menuItemRoutes loaded");

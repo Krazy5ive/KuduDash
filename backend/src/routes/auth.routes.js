@@ -3,15 +3,9 @@ const router  = express.Router();
 const Student = require("../models/Student");
 const Vendor  = require("../models/Vendor");
 const Admin   = require("../models/Admin");
-const { auth } = require("express-oauth2-jwt-bearer");
-
-const checkJwt = auth({
-  audience:      process.env.AUTH0_AUDIENCE,
-  issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}`,
-});
 
 // ── POST /api/auth/sync ────────────────────────────────────────────────────
-router.post("/sync", checkJwt, async (req, res) => {
+router.post("/sync", async (req, res) => {
   try {
     const { sub, email, given_name, family_name, picture } = req.body;
 
@@ -30,7 +24,7 @@ router.post("/sync", checkJwt, async (req, res) => {
       return res.json({
         isNewUser: false,
         role,
-        userId:    existingUser._id,
+        userId: existingUser._id,
         ...(vendor && {
           vendorStatus:   vendor.status,
           ownerFirstName: vendor.ownerFirstName,
@@ -48,11 +42,11 @@ router.post("/sync", checkJwt, async (req, res) => {
     }
 
     return res.json({
-      isNewUser:   true,
-      role:        null,
+      isNewUser: true,
+      role: null,
       tempProfile: {
         sub,
-        email:       normalizedEmail,
+        email: normalizedEmail,
         given_name:  given_name  || email.split("@")[0],
         family_name: family_name || "",
         picture:     picture     || "",
@@ -66,7 +60,7 @@ router.post("/sync", checkJwt, async (req, res) => {
 });
 
 // ── POST /api/auth/register/student ───────────────────────────────────────
-router.post("/register/student", checkJwt, async (req, res) => {
+router.post("/register/student", async (req, res) => {
   try {
     const { sub, email, given_name, family_name, picture } = req.body;
 
@@ -81,10 +75,10 @@ router.post("/register/student", checkJwt, async (req, res) => {
 
     const student = await Student.create({
       authProviderId: sub,
-      email:          normalizedEmail,
-      firstName:      given_name,
-      lastName:       family_name,
-      profilePhoto:   picture || "",
+      email: normalizedEmail,
+      firstName: given_name,
+      lastName: family_name,
+      profilePhoto: picture || "",
     });
 
     res.status(201).json({ role: "student", userId: student._id });
@@ -98,7 +92,7 @@ router.post("/register/student", checkJwt, async (req, res) => {
 });
 
 // ── POST /api/auth/register/vendor ────────────────────────────────────────
-router.post("/register/vendor", checkJwt, async (req, res) => {
+router.post("/register/vendor", async (req, res) => {
   try {
     const {
       sub, email, given_name, family_name,
@@ -120,22 +114,22 @@ router.post("/register/vendor", checkJwt, async (req, res) => {
 
     const vendor = await Vendor.create({
       authProviderId: sub,
-      email:          normalizedEmail,
+      email: normalizedEmail,
       ownerFirstName: given_name,
-      ownerLastName:  family_name,
+      ownerLastName: family_name,
       businessName,
-      location:    location    || "",
-      phone:       phone       || "",
+      location: location || "",
+      phone: phone || "",
       description: description || "",
       status: "pending",
     });
 
     res.status(201).json({
-      role:           "vendor",
-      userId:         vendor._id,
-      vendorStatus:   vendor.status,
+      role: "vendor",
+      userId: vendor._id,
+      vendorStatus: vendor.status,
       ownerFirstName: vendor.ownerFirstName,
-      ownerLastName:  vendor.ownerLastName,
+      ownerLastName: vendor.ownerLastName,
     });
   } catch (err) {
     if (err.code === 11000) {
@@ -147,7 +141,7 @@ router.post("/register/vendor", checkJwt, async (req, res) => {
 });
 
 // ── POST /api/auth/register/admin ─────────────────────────────────────────
-router.post("/register/admin", checkJwt, async (req, res) => {
+router.post("/register/admin", async (req, res) => {
   try {
     const { sub, email, given_name, family_name, adminCode } = req.body;
 
@@ -169,9 +163,9 @@ router.post("/register/admin", checkJwt, async (req, res) => {
 
     const admin = await Admin.create({
       authProviderId: sub,
-      email:          normalizedEmail,
-      firstName:      given_name,
-      lastName:       family_name,
+      email: normalizedEmail,
+      firstName: given_name,
+      lastName: family_name,
     });
 
     res.status(201).json({ role: "admin", userId: admin._id });

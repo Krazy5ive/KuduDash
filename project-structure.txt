@@ -1,0 +1,72 @@
+KuduDash Main/KuduDash/
+├── README.md  
+├── backend/  
+│   ├── app.js  
+│   ├── jest.config.js  
+│   ├── package.json  
+│   ├── server.js  
+│   └── src/  
+│       ├── controllers/  
+│       │   ├── adminController.js  
+│       │   ├── menuItemController.js  
+│       │   ├── orderController.js  
+│       │   ├── studentController.js  
+│       │   └── vendorController.js  
+│       ├── models/  
+│       │   ├── Admin.js  
+│       │   ├── MenuItem.js  
+│       │   ├── Order.js  
+│       │   ├── Student.js  
+│       │   └── Vendor.js  
+│       └── routes/  
+│           ├── adminRoutes.js  
+│           ├── auth.routes.js  
+│           ├── menuItemRoutes.js  
+│           ├── orderRoutes.js  
+│           ├── studentRoutes.js  
+│           └── vendorRoutes.js  
+├── frontend/  
+│   ├── package.json  
+│   ├── README.md  
+│   ├── server.js  
+│   ├── build/  
+│   │   ├── asset-manifest.json  
+│   │   ├── index.html  
+│   │   ├── manifest.json  
+│   │   ├── robots.txt  
+│   │   ├── web.config  
+│   │   └── static/  
+│   │       ├── css/  
+│   │       │   └── main.ccfa3180.css  
+│   │       └── js/  
+│   │           ├── 453.825386d9.chunk.js  
+│   │           ├── main.649c6396.js  
+│   │           └── main.649c6396.js.LICENSE.txt  
+│   ├── public/  
+│   │   ├── index.html  
+│   │   ├── manifest.json  
+│   │   ├── robots.txt  
+│   │   └── web.config  
+│   └── src/  
+│       ├── App.css  
+│       ├── App.js  
+│       ├── App.test.js  
+│       ├── index.css  
+│       ├── index.js  
+│       ├── Login.css  
+│       ├── Login.js  
+│       ├── reportWebVitals.js  
+│       ├── setupTests.js  
+│       ├── Vibe.css  
+│       ├── Vibe.js  
+│       └── Dashboards/  
+│           ├── Admin.css  
+│           ├── Admin.js  
+│           ├── Student.css  
+│           ├── Student.js  
+│           ├── Vendor.css  
+│           └── Vendor.js  
+
+- The backend folder contains your Node.js/Express API, with controllers, models, and route definitions.
+- The frontend folder contains your React app, with source code in src/, static assets in public/, and build output in build/.
+- Each dashboard (Admin, Student, Vendor) has its own component and styles in frontend/src/Dashboards/.

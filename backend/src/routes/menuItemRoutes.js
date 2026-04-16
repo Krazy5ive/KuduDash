@@ -1,3 +1,4 @@
+// menuItemRoutes.js
 const express = require("express");
 const router = express.Router();
 const { getMenuItems, getMenuItemById, createMenuItem, updateMenuItem, deleteMenuItem } = require("../controllers/menuItemController");
@@ -9,3 +10,4 @@ router.put("/:id", updateMenuItem);
 router.delete("/:id", deleteMenuItem);
 
 module.exports = router;
+console.log("menuItemRoutes file executed");

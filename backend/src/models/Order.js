@@ -1,3 +1,4 @@
+// Order.js model
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
@@ -52,6 +53,5 @@ const orderSchema = new Schema(
 
 orderSchema.index({student: 1, createdAt: -1});
 orderSchema.index({vendor: 1, status: 1});
-orderSchema.index({orderNumber: 1});
 
 module.exports = mongoose.model("Order", orderSchema);

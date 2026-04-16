@@ -1,3 +1,4 @@
+// vendorRoutes.js
 const express = require("express");
 const router = express.Router();
 const { getAllVendors, getVendorById, createVendor, updateVendor } = require("../controllers/vendorController");

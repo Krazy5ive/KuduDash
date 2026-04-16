@@ -42,10 +42,18 @@ const Vibe = () => {
           }),
         });
 
+        // ── Guard: ensure we got JSON back ─────────────────────
+        if (!res.ok || !res.headers.get("content-type")?.includes("application/json")) {
+          const raw = await res.text();
+          console.error("Sync: unexpected response →", raw.slice(0, 300));
+          setSyncing(false);
+          return;
+        }
+
         const data = await res.json();
 
         if (!data.isNewUser) {
-          // Returning user — go straight to their dashboard, passing name in state
+          // Returning user — go straight to their dashboard
           navigate(`/dashboard/${data.role}`, {
             state: {
               ownerFirstName: data.ownerFirstName || data.firstName || "",
@@ -111,6 +119,14 @@ const Vibe = () => {
         body: JSON.stringify(body),
       });
 
+      // ── Guard: ensure we got JSON back ──────────────────────
+      if (!res.headers.get("content-type")?.includes("application/json")) {
+        const raw = await res.text();
+        console.error("Register: unexpected response →", raw.slice(0, 300));
+        setError("Server error, please try again");
+        return;
+      }
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -118,7 +134,7 @@ const Vibe = () => {
         return;
       }
 
-      // Navigate to dashboard, passing name in state
+      // Navigate to dashboard
       navigate(`/dashboard/${selectedRole}`, {
         state: {
           ownerFirstName: data.ownerFirstName || body.given_name  || "",

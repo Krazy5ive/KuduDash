@@ -1,3 +1,4 @@
+// Student.js model
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
@@ -23,5 +24,4 @@ const studentSchema = new Schema(
     }
 );
 
-studentSchema.index({email: 1});
 module.exports = mongoose.model("Student", studentSchema);
