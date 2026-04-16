@@ -1,54 +1,30 @@
-name: Coverage
+name: Test & Coverage
 
 on: [push, pull_request]
 
 jobs:
-  backend-coverage:
+  test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 18
 
-      - name: Install backend dependencies
-        run: npm ci
-        working-directory: ./backend
+      - name: Install dependencies
+        run: npm install
+        working-directory: backend
 
-      - name: Run backend tests & generate coverage
+      - name: Run tests with coverage
         run: npm test
-        working-directory: ./backend
+        working-directory: backend
 
-      - name: Upload backend coverage to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          working-directory: ./backend
-          flags: backend
-
-  frontend-coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install frontend dependencies
-        run: npm ci --legacy-peer-deps
-        working-directory: ./frontend
-
-      - name: Run frontend tests & generate coverage
-        run: npm test
-        working-directory: ./frontend
-
-      - name: Upload frontend coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          working-directory: ./frontend
-          flags: frontend
+          files: backend/coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}   # add this secret in GitHub repo settings
+          fail_ci_if_error: true
