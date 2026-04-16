@@ -18,10 +18,10 @@
     "express": "^5.2.1",
     "express-oauth2-jwt-bearer": "^1.8.0",
     "jest":"29.0",
-    "mongoose": "^29.0.0"
+    "mongoose": "^8.0.0"
   },
   "devDependencies": {
-    "jest": "^30.3.0",
+    "jest": "^29.0",
     "nodemon": "^3.1.14"
   }
 }
