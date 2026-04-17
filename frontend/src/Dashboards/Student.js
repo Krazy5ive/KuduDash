@@ -19,12 +19,11 @@ const Student = () => {
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState("All");
 
-  // Checkout state
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(null);
 
-  // fetch vendors
+  // Fetch vendors
   useEffect(() => {
     fetch("/api/vendors")
       .then((res) => {
@@ -41,7 +40,7 @@ const Student = () => {
       });
   }, []);
 
-  // fetch menu when vendor is selected
+  // Fetch menu when vendor is selected
   useEffect(() => {
     if (!selectedVendor) return;
     setLoadingMenu(true);
@@ -82,39 +81,43 @@ const Student = () => {
       });
 
       const cartByVendor = getCartByVendor();
-      const firstVendor = cartByVendor[0];
 
-      const orderData = {
-        vendorId: firstVendor.vendorId,
-        items: firstVendor.items.map((item) => ({
-          itemId: item.itemId,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          subtotal: item.price * item.quantity,
-        })),
-        totalAmount: firstVendor.subtotal,
-      };
+      // Fire one order per vendor simultaneously
+      const orderPromises = cartByVendor.map((vendorCart) => {
+        const orderData = {
+          vendorId: vendorCart.vendorId,
+          items: vendorCart.items.map((item) => ({
+            itemId: item.itemId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            subtotal: item.price * item.quantity,
+          })),
+          totalAmount: vendorCart.subtotal,
+        };
 
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(orderData),
+        return fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(orderData),
+        }).then((res) => {
+          if (!res.ok) {
+            return res.json().then((e) => {
+              throw new Error(e.message || "Failed to place order");
+            });
+          }
+          return res.json();
+        });
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to place order");
-      }
+      const results = await Promise.all(orderPromises);
 
-      const data = await response.json();
       clearCart();
-      setOrderSuccess(data.order);
+      setOrderSuccess(results.map((r) => r.order));
       setActiveNav("orders");
-
     } catch (err) {
       setCheckoutError(err.message);
     } finally {
@@ -123,7 +126,6 @@ const Student = () => {
   };
 
   const cartByVendor = getCartByVendor();
-  const hasMultipleVendors = cartByVendor.length > 1;
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -134,9 +136,7 @@ const Student = () => {
         onMouseEnter={() => setExpanded(true)}
         onMouseLeave={() => setExpanded(false)}
       >
-        <header className="kd-logo">
-          {expanded ? "KuduDash" : "KD"}
-        </header>
+        <header className="kd-logo">{expanded ? "KuduDash" : "KD"}</header>
 
         <nav className="kd-nav">
           <button
@@ -173,22 +173,24 @@ const Student = () => {
               <path d="M16 10a4 4 0 01-8 0" />
             </svg>
             {cartCount > 0 && (
-              <span style={{
-                position: "absolute",
-                top: "6px",
-                right: expanded ? "12px" : "6px",
-                background: "#ef4444",
-                color: "#fff",
-                borderRadius: "999px",
-                fontSize: "10px",
-                fontWeight: "700",
-                minWidth: "18px",
-                height: "18px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "0 4px",
-              }}>
+              <span
+                style={{
+                  position: "absolute",
+                  top: "6px",
+                  right: expanded ? "12px" : "6px",
+                  background: "#ef4444",
+                  color: "#fff",
+                  borderRadius: "999px",
+                  fontSize: "10px",
+                  fontWeight: "700",
+                  minWidth: "18px",
+                  height: "18px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 4px",
+                }}
+              >
                 {cartCount}
               </span>
             )}
@@ -244,13 +246,11 @@ const Student = () => {
               {activeNav === "cart" && "Review your order and place it"}
               {activeNav === "orders" && "Your order history"}
               {activeNav === "overview" && "Welcome to KuduDash"}
-              {activeNav === "about" && ""}
-              {activeNav === "settings" && ""}
             </p>
           </section>
         </header>
 
-        {/* ── VENDORS PAGE ── */}
+        {/* VENDORS PAGE */}
         {activeNav === "vendors" && (
           <>
             {!selectedVendor ? (
@@ -270,10 +270,11 @@ const Student = () => {
                     >
                       <header>
                         <figure>
-                          {vendor.logo
-                            ? <img src={vendor.logo} alt={vendor.businessName} className="kd-vendor-logo" />
-                            : <abbr title={vendor.businessName}>{vendor.businessName[0]}</abbr>
-                          }
+                          {vendor.logo ? (
+                            <img src={vendor.logo} alt={vendor.businessName} className="kd-vendor-logo" />
+                          ) : (
+                            <abbr title={vendor.businessName}>{vendor.businessName[0]}</abbr>
+                          )}
                         </figure>
                         <hgroup>
                           <h2>{vendor.businessName}</h2>
@@ -312,7 +313,7 @@ const Student = () => {
                         aria-pressed={activeCategory === cat}
                       >
                         {cat}
-                        <output className="kd-category-count">{count}</output>
+                        <span className="kd-category-count">{count}</span>
                       </button>
                     );
                   })}
@@ -327,10 +328,9 @@ const Student = () => {
                     filteredItems.map((item) => (
                       <article key={item._id} className="kd-menu-card">
                         <figure>
-                          {item.imageUrl
-                            ? <img src={item.imageUrl} alt={item.name} className="kd-menu-image" loading="lazy" />
-                            : null
-                          }
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.name} className="kd-menu-image" loading="lazy" />
+                          ) : null}
                         </figure>
                         <section>
                           <h2>{item.name}</h2>
@@ -356,7 +356,7 @@ const Student = () => {
           </>
         )}
 
-        {/* ── CART & CHECKOUT PAGE ── */}
+        {/* CART & CHECKOUT PAGE */}
         {activeNav === "cart" && (
           <section className="kd-checkout-view">
             {cartItems.length === 0 ? (
@@ -373,16 +373,9 @@ const Student = () => {
               </div>
             ) : (
               <section className="kd-checkout-grid">
-                {/* LEFT — ORDER SUMMARY */}
+                {/* LEFT - ORDER SUMMARY */}
                 <section className="kd-order-summary">
                   <h2 className="kd-summary-title">Order Summary</h2>
-
-                  {hasMultipleVendors && (
-                    <aside className="kd-multi-vendor-warning">
-                      <span>⚠️</span>
-                      <span>Your cart has items from multiple vendors. Only the first vendor's items will be ordered.</span>
-                    </aside>
-                  )}
 
                   {cartByVendor.map((vendorCart) => (
                     <article key={vendorCart.vendorId} className="kd-vendor-checkout-section">
@@ -398,17 +391,23 @@ const Student = () => {
                             <button
                               className="kd-qty-btn"
                               onClick={() => updateQuantity(item.itemId, item.quantity - 1)}
-                            >−</button>
+                            >
+                              −
+                            </button>
                             <span>{item.quantity}</span>
                             <button
                               className="kd-qty-btn"
                               onClick={() => updateQuantity(item.itemId, item.quantity + 1)}
-                            >+</button>
+                            >
+                              +
+                            </button>
                             <button
                               className="kd-remove-btn"
                               onClick={() => removeFromCart(item.itemId)}
-                            >🗑</button>
-                            <output>R{(item.price * item.quantity).toFixed(2)}</output>
+                            >
+                              🗑
+                            </button>
+                            <span>R{(item.price * item.quantity).toFixed(2)}</span>
                           </section>
                         </section>
                       ))}
@@ -429,7 +428,7 @@ const Student = () => {
                   </button>
                 </section>
 
-                {/* RIGHT — PAYMENT PANEL */}
+                {/* RIGHT - PAYMENT PANEL */}
                 <aside className="kd-payment-panel">
                   <h2 className="kd-payment-title">Payment Summary</h2>
 
@@ -453,6 +452,12 @@ const Student = () => {
                     <span>R{cartTotal.toFixed(2)}</span>
                   </footer>
 
+                  {cartByVendor.length > 1 && (
+                    <aside className="kd-info-message">
+                      🛒 You have items from {cartByVendor.length} vendors — a separate order will be placed for each.
+                    </aside>
+                  )}
+
                   {checkoutError && (
                     <aside className="kd-error-message">{checkoutError}</aside>
                   )}
@@ -462,7 +467,9 @@ const Student = () => {
                     onClick={handlePlaceOrder}
                     disabled={isProcessing}
                   >
-                    {isProcessing ? "Processing..." : "Place Order →"}
+                    {isProcessing
+                      ? "Processing..."
+                      : `Place ${cartByVendor.length > 1 ? `${cartByVendor.length} Orders` : "Order"} →`}
                   </button>
 
                   <button
@@ -478,19 +485,24 @@ const Student = () => {
           </section>
         )}
 
-        {/* ── ORDERS PAGE ── */}
+        {/* ORDERS PAGE */}
         {activeNav === "orders" && (
           <section aria-label="Orders">
             {orderSuccess && (
               <aside className="kd-success-banner">
-                ✅ Order placed successfully! Order ID: <strong>{orderSuccess._id}</strong>
+                ✅ {orderSuccess.length} order{orderSuccess.length > 1 ? "s" : ""} placed successfully!
+                {orderSuccess.map((order) => (
+                  <p key={order._id}>
+                    Order ID: <strong>{order._id}</strong>
+                  </p>
+                ))}
               </aside>
             )}
             <p className="kd-state-msg">Order history coming soon.</p>
           </section>
         )}
 
-        {/* ── PLACEHOLDERS ── */}
+        {/* PLACEHOLDERS */}
         {(activeNav === "overview" || activeNav === "about" || activeNav === "settings") && (
           <section>
             <p style={{ color: "#475569", fontSize: "14px" }}>
