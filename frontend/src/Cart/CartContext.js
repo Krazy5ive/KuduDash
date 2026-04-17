@@ -1,120 +1,98 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useContext, useState } from 'react';
 
 const CartContext = createContext();
 
-export const useCart = () => useContext(CartContext);
-
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
-  const [cartTotal, setCartTotal] = useState(0);
-  const [cartCount, setCartCount] = useState(0);
 
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      const parsed = JSON.parse(savedCart);
-      setCartItems(parsed);
-      updateTotals(parsed);
-    }
-  }, []);
-
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-    updateTotals(cartItems);
-  }, [cartItems]);
-
-  const updateTotals = (items) => {
-    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const count = items.reduce((sum, item) => sum + item.quantity, 0);
-    setCartTotal(total);
-    setCartCount(count);
-  };
-
-  // Add item to cart
+  // Add item — merges quantity if same item+vendor already in cart
   const addToCart = (item, vendorId, vendorName) => {
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(i => i.itemId === item._id);
-      
-      if (existingItem) {
-        return prevItems.map(i =>
-          i.itemId === item._id
+    setCartItems((prev) => {
+      const existing = prev.find(
+        (i) => i.itemId === item._id && i.vendorId === vendorId
+      );
+      if (existing) {
+        return prev.map((i) =>
+          i.itemId === item._id && i.vendorId === vendorId
             ? { ...i, quantity: i.quantity + 1 }
             : i
         );
-      } else {
-        const newItem = {
+      }
+      return [
+        ...prev,
+        {
           itemId: item._id,
           name: item.name,
           price: item.price,
           quantity: 1,
-          vendorId: vendorId,
-          vendorName: vendorName,
-          imageUrl: item.imageUrl || null
-        };
-        return [...prevItems, newItem];
-      }
+          vendorId,
+          vendorName,
+        },
+      ];
     });
   };
 
-  // Remove item from cart completely
+  // Remove item entirely
   const removeFromCart = (itemId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.itemId !== itemId));
+    setCartItems((prev) => prev.filter((i) => i.itemId !== itemId));
   };
 
-  // Update quantity of an item
-  const updateQuantity = (itemId, newQuantity) => {
-    if (newQuantity <= 0) {
+  // Set specific quantity — removes item if quantity drops to 0
+  const updateQuantity = (itemId, quantity) => {
+    if (quantity <= 0) {
       removeFromCart(itemId);
       return;
     }
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.itemId === itemId
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
+    setCartItems((prev) =>
+      prev.map((i) => (i.itemId === itemId ? { ...i, quantity } : i))
     );
   };
 
-  // Clear entire cart
-  const clearCart = () => {
-    setCartItems([]);
-  };
+  // Wipe the whole cart
+  const clearCart = () => setCartItems([]);
 
-  // Get cart grouped by vendor
+  // Group cart items by vendor — returns array of vendor buckets
   const getCartByVendor = () => {
-    const grouped = {};
-    cartItems.forEach(item => {
-      if (!grouped[item.vendorId]) {
-        grouped[item.vendorId] = {
+    const map = {};
+    cartItems.forEach((item) => {
+      if (!map[item.vendorId]) {
+        map[item.vendorId] = {
           vendorId: item.vendorId,
           vendorName: item.vendorName,
           items: [],
-          subtotal: 0
+          subtotal: 0,
         };
       }
-      grouped[item.vendorId].items.push(item);
-      grouped[item.vendorId].subtotal += item.price * item.quantity;
+      map[item.vendorId].items.push(item);
+      map[item.vendorId].subtotal += item.price * item.quantity;
     });
-    return Object.values(grouped);
+    return Object.values(map);
   };
 
-  const value = {
-    cartItems,
-    cartTotal,
-    cartCount,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    getCartByVendor
-  };
+  // Derived values
+  const cartTotal = cartItems.reduce(
+    (sum, item) => sum + item.price * item.quantity, 0
+  );
+  const cartCount = cartItems.reduce(
+    (sum, item) => sum + item.quantity, 0
+  );
 
   return (
-    <CartContext.Provider value={value}>
+    <CartContext.Provider
+      value={{
+        cartItems,
+        cartTotal,
+        cartCount,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        getCartByVendor,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
 };
+
+export const useCart = () => useContext(CartContext);

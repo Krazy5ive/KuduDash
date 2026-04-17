@@ -60,12 +60,23 @@ KuduDash Main/KuduDash/
 │       ├── Vibe.css  
 │       ├── Vibe.js  
 │       └── Dashboards/  
-│           ├── Admin.css  
-│           ├── Admin.js  
-│           ├── Student.css  
-│           ├── Student.js  
-│           ├── Vendor.css  
-│           └── Vendor.js  
+│       |    ├── Admin.css  
+│       |    ├── Admin.js  
+│       |    ├── Student.css  
+│       |    ├── Student.js  
+│       |    ├── Vendor.css  
+│       |    └── Vendor.js  
+        |___ Cart/
+            |___ CartContext.js
+            |___ CartContext.css
+            |___ CartIcon.js
+            |___ CartIcon.css
+            |___ AddToCart.js
+            |___ AddToCart.css
+            |___ Cart.js
+            |___ Cart.css
+            |___ Checkout.js
+            |___ Checkout.css
 
 - The backend folder contains your Node.js/Express API, with controllers, models, and route definitions.
 - The frontend folder contains your React app, with source code in src/, static assets in public/, and build output in build/.

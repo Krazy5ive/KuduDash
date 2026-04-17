@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import "./Vendor.css";
 import { useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
+import AddToCartButton from "../Cart/AddToCart";
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
@@ -32,7 +33,7 @@ const Vendor = () => {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
-  const [formError, setFormError] = useState("");  // ← new
+  const [formError, setFormError] = useState("");
 
   const fileInputRef = useRef(null);
 
@@ -91,7 +92,7 @@ const Vendor = () => {
   const openAddModal = () => {
     setFormData(EMPTY_FORM);
     setEditingId(null);
-    setFormError("");  // ← clear error on open
+    setFormError("");
     setModal("add");
   };
 
@@ -104,7 +105,7 @@ const Vendor = () => {
       imageUrl:    item.imageUrl    || "",
     });
     setEditingId(item.id);
-    setFormError("");  // ← clear error on open
+    setFormError("");
     setModal("edit");
   };
 
@@ -117,7 +118,7 @@ const Vendor = () => {
     setModal(null);
     setEditingId(null);
     setPendingDeleteId(null);
-    setFormError("");  // ← clear error on close
+    setFormError("");
   };
 
   const handleFieldChange = (e) => {
@@ -125,7 +126,6 @@ const Vendor = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Capitec-style price input: store as integer cents, never touch floats
   const handlePriceKeyDown = (e) => {
     const allowed = ["Backspace", "Tab", "ArrowLeft", "ArrowRight"];
     if (allowed.includes(e.key)) {
@@ -161,7 +161,7 @@ const Vendor = () => {
 
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
-    setFormError("");  // ← clear previous error
+    setFormError("");
     try {
       const token = await getToken();
       const { priceCents, ...rest } = formData;
@@ -176,7 +176,7 @@ const Vendor = () => {
 
       if (!res.ok) {
         const data = await res.json();
-        setFormError(data.message || "Something went wrong");  // ← show error in form
+        setFormError(data.message || "Something went wrong");
         return;
       }
 
@@ -190,7 +190,7 @@ const Vendor = () => {
 
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
-    setFormError("");  // ← clear previous error
+    setFormError("");
     try {
       const token = await getToken();
       const { priceCents, ...rest } = formData;
@@ -205,7 +205,7 @@ const Vendor = () => {
 
       if (!res.ok) {
         const data = await res.json();
-        setFormError(data.message || "Something went wrong");  // ← show error in form
+        setFormError(data.message || "Something went wrong");
         return;
       }
 
@@ -243,7 +243,6 @@ const Vendor = () => {
           {modal === "add" ? "Add menu item" : "Edit menu item"}
         </legend>
 
-        {/* ← Error banner — only shown when formError is set */}
         {formError && (
           <p className="kd-form-error" role="alert">
             {formError}
@@ -516,6 +515,11 @@ const Vendor = () => {
                     >
                       Delete
                     </button>
+                    <AddToCartButton
+                      item={{ ...item, _id: item.id }}
+                      vendorId={vendorId}
+                      vendorName={`${firstName} ${lastName}`}
+                    />
                   </footer>
 
                 </li>

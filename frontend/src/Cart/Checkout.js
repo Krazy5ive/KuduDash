@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import "./Checkout.css";
 
 const CheckoutPage = () => {
+  const { getAccessTokenSilently } = useAuth0();
   const [cartItems, setCartItems] = useState([]);
   const [cartTotal, setCartTotal] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -50,6 +52,10 @@ const CheckoutPage = () => {
     setError("");
 
     try {
+      const token = await getAccessTokenSilently({
+        authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
+      });
+
       const cartByVendor = getCartByVendor();
       const firstVendor = cartByVendor[0];
 
@@ -65,7 +71,6 @@ const CheckoutPage = () => {
         totalAmount: firstVendor.subtotal,
       };
 
-      const token = localStorage.getItem("token");
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
