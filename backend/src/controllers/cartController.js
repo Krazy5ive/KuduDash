@@ -14,15 +14,15 @@ const getCart = async (req, res) => {
 
 const addToCart = async (req, res) => {
   try {
-    const { studentId, vendorId, menuItem, name, price, quantity, specialNote } = req.body;
+    const { studentId, vendorId, menuItem, name, unitPrice, quantity, specialNote } = req.body;
     let cart = await Cart.findOne({ student: studentId });
 
     if (!cart) {
       cart = new Cart({
         student: studentId,
         vendor: vendorId,
-        items: [{ menuItem, name, price, quantity, specialNote }],
-        totalAmount: price * quantity,
+        items: [{ menuItem, name, unitPrice, quantity, specialNote }],
+        totalAmount: unitPrice  * quantity,
       });
     } else {
       const existingItem = cart.items.find(
@@ -31,10 +31,10 @@ const addToCart = async (req, res) => {
       if (existingItem) {
         existingItem.quantity += quantity;
       } else {
-        cart.items.push({ menuItem, name, price, quantity, specialNote });
+        cart.items.push({ menuItem, name, unitPrice, quantity, specialNote });
       }
       cart.totalAmount = cart.items.reduce(
-        (total, item) => total + item.price * item.quantity, 0
+        (total, item) => total + item.unitPrice * item.quantity, 0
       );
     }
     await cart.save();
@@ -55,7 +55,7 @@ const updateCartItem = async (req, res) => {
 
     item.quantity = quantity;
     cart.totalAmount = cart.items.reduce(
-      (total, item) => total + item.price * item.quantity, 0
+      (total, item) => total + item.unitPrice * item.quantity, 0
     );
     await cart.save();
     res.json(cart);
@@ -73,7 +73,7 @@ const removeFromCart = async (req, res) => {
       (item) => item._id.toString() !== req.params.itemId
     );
     cart.totalAmount = cart.items.reduce(
-      (total, item) => total + item.price * item.quantity, 0
+      (total, item) => total + item.unitPrice * item.quantity, 0
     );
     await cart.save();
     res.json(cart);
