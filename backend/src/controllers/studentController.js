@@ -1,3 +1,4 @@
+//studentController.js
 const Student = require("../models/Student");
 
 const getAllStudents = async (req, res) => {

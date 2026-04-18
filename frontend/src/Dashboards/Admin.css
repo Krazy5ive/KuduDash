@@ -7,6 +7,11 @@
   padding: 0;
 }
 
+button {
+  color: inherit;
+}
+
+Admincss
 /* APP BACKGROUND */
 .kd-app {
   font-family: 'DM Sans', sans-serif;
