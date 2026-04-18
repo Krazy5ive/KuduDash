@@ -9,7 +9,7 @@ const cartSchema = new Schema(
       {
         menuItem: { type: Schema.Types.ObjectId, ref: "MenuItem", required: true },
         name: { type: String, required: true },
-        price: { type: Number, required: true },
+        unitPrice: { type: Number, required: true },
         quantity: { type: Number, required: true, min: 1 },
         specialNote: { type: String },
       },
