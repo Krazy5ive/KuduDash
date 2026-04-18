@@ -65,7 +65,9 @@ KuduDash Main/KuduDash/
 │       |    ├── Student.css  
 │       |    ├── Student.js  
 │       |    ├── Vendor.css  
-│       |    └── Vendor.js  
+│       |    └── Vendor.js
+        |    |___ ProfilePanel.js
+        |    |___ ProfilePanel.css
         |___ Cart/
             |___ CartContext.js
             |___ CartContext.css
