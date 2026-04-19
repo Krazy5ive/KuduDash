@@ -1,9 +1,8 @@
-// controllers/orderController.js
 const Order = require("../models/Order");
 
 const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ student: req.query.student })
+    const orders = await Order.find({ student: req.user._id })
       .populate("vendor", "businessName location")
       .sort({ createdAt: -1 });
     res.json(orders);
@@ -26,9 +25,27 @@ const getOrderById = async (req, res) => {
 
 const createOrder = async (req, res) => {
   try {
-    const order = new Order(req.body);
+    const { vendorId, items, totalAmount } = req.body;
+    if (!vendorId || !items?.length || !totalAmount) {
+      return res.status(400).json({ message: "Missing required order fields" });
+    }
+    const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    const order = new Order({
+      student:     req.user._id,
+      vendor:      vendorId,
+      items:       items.map((i) => ({
+        menuItem:  i.menuItem,
+        name:      i.name,
+        unitPrice: i.price,
+        quantity:  i.quantity,
+        subtotal:  i.price * i.quantity,
+      })),
+      subtotal,
+      totalAmount: subtotal,
+      status:      "pending",
+    });
     await order.save();
-    res.status(201).json(order);
+    res.status(201).json({ order });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

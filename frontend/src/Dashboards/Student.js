@@ -1,3 +1,4 @@
+// Student.js
 import React, { useState, useEffect } from "react";
 import { useCart } from "../Cart/CartContext";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -5,6 +6,34 @@ import "./Student.css";
 import ProfilePanel from "./ProfilePanel";
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
+
+const navItems = [
+  {
+    id: "overview", label: "Overview",
+    path: [
+      React.createElement("rect", { key: "a", x: "3",  y: "3",  width: "7", height: "7", rx: "2" }),
+      React.createElement("rect", { key: "b", x: "14", y: "3",  width: "7", height: "7", rx: "2" }),
+      React.createElement("rect", { key: "c", x: "14", y: "14", width: "7", height: "7", rx: "2" }),
+      React.createElement("rect", { key: "d", x: "3",  y: "14", width: "7", height: "7", rx: "2" }),
+    ],
+  },
+  {
+    id: "vendors", label: "Vendors",
+    path: [React.createElement("path", { key: "a", d: "M4 6h16M4 12h16M4 18h16" })],
+  },
+  {
+    id: "orders", label: "Orders",
+    path: [React.createElement("path", { key: "a", d: "M6 2h12v20H6zM6 6h12" })],
+  },
+  {
+    id: "about", label: "About",
+    path: [React.createElement("path", { key: "a", d: "M12 2a10 10 0 100 20 10 10 0 000-20z" })],
+  },
+  {
+    id: "settings", label: "Settings",
+    path: [React.createElement("path", { key: "a", d: "M12 8a4 4 0 100 8 4 4 0 000-8zm8 4a8 8 0 11-16 0 8 8 0 0116 0z" })],
+  },
+];
 
 const Student = () => {
   const {
@@ -23,12 +52,10 @@ const Student = () => {
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState("All");
   const [studentProfile, setStudentProfile] = useState(null);
-
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(null);
 
-  // Fetch student profile for ProfilePanel
   useEffect(() => {
     if (!auth0User?.sub) return;
     getAccessTokenSilently({
@@ -44,7 +71,6 @@ const Student = () => {
       .catch(console.error);
   }, [auth0User, getAccessTokenSilently]);
 
-  // Fetch vendors
   useEffect(() => {
     fetch("/api/vendors")
       .then((res) => { if (!res.ok) throw new Error("Failed to fetch vendors"); return res.json(); })
@@ -52,7 +78,6 @@ const Student = () => {
       .catch((err) => { setError(err.message); setLoadingVendors(false); });
   }, []);
 
-  // Fetch menu when vendor selected
   useEffect(() => {
     if (!selectedVendor) return;
     setLoadingMenu(true);
@@ -83,8 +108,11 @@ const Student = () => {
         const orderData = {
           vendorId: vendorCart.vendorId,
           items: vendorCart.items.map((item) => ({
-            itemId: item.itemId, name: item.name, price: item.price,
-            quantity: item.quantity, subtotal: item.price * item.quantity,
+            menuItem: item.menuItem,
+            name:     item.name,
+            price:    item.price,
+            quantity: item.quantity,
+            subtotal: item.price * item.quantity,
           })),
           totalAmount: vendorCart.subtotal,
         };
@@ -98,7 +126,7 @@ const Student = () => {
         });
       });
       const results = await Promise.all(orderPromises);
-      clearCart();
+      await clearCart();
       setOrderSuccess(results.map((r) => r.order));
       setActiveNav("orders");
     } catch (err) {
@@ -112,221 +140,259 @@ const Student = () => {
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <main className="kd-app">
-      {/* SIDEBAR */}
-      <aside
-        className={`kd-sidebar ${expanded ? "expanded" : ""}`}
-        onMouseEnter={() => setExpanded(true)}
-        onMouseLeave={() => setExpanded(false)}
-      >
-        <header className="kd-logo">{expanded ? "KuduDash" : "KD"}</header>
-        <nav className="kd-nav">
-          {[
-            { id: "overview", icon: <><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /></>, label: "Overview" },
-            { id: "vendors",  icon: <path d="M4 6h16M4 12h16M4 18h16" />, label: "Vendors" },
-            { id: "orders",   icon: <path d="M6 2h12v20H6zM6 6h12" />, label: "Orders" },
-            { id: "about",    icon: <path d="M12 2a10 10 0 100 20 10 10 0 000-20z" />, label: "About" },
-            { id: "settings", icon: <path d="M12 8a4 4 0 100 8 4 4 0 000-8zm8 4a8 8 0 11-16 0 8 8 0 0116 0z" />, label: "Settings" },
-          ].map(({ id, icon, label }) => (
-            <button key={id} className={`kd-nav-item ${activeNav === id ? "active" : ""}`} onClick={() => setActiveNav(id)}>
-              <svg viewBox="0 0 24 24" className="kd-icon">{icon}</svg>
-              {expanded && <p className="kd-nav-text">{label}</p>}
-            </button>
-          ))}
+    React.createElement("main", { className: "kd-app" },
 
-          {/* Cart with badge */}
-          <button className={`kd-nav-item ${activeNav === "cart" ? "active" : ""}`}
-            onClick={() => setActiveNav("cart")} style={{ position: "relative" }}>
-            <svg viewBox="0 0 24 24" className="kd-icon">
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-              <path d="M3 6h18" /><path d="M16 10a4 4 0 01-8 0" />
-            </svg>
-            {cartCount > 0 && (
-              <span style={{
+      React.createElement("aside", {
+        className: `kd-sidebar ${expanded ? "expanded" : ""}`,
+        onMouseEnter: () => setExpanded(true),
+        onMouseLeave: () => setExpanded(false),
+      },
+        React.createElement("header", { className: "kd-logo" }, expanded ? "KuduDash" : "KD"),
+        React.createElement("nav", { className: "kd-nav" },
+
+          navItems.map(({ id, label, path }) =>
+            React.createElement("button", {
+              key: id,
+              className: `kd-nav-item ${activeNav === id ? "active" : ""}`,
+              onClick: () => setActiveNav(id),
+            },
+              React.createElement("svg", { viewBox: "0 0 24 24", className: "kd-icon" }, ...path),
+              expanded && React.createElement("p", { className: "kd-nav-text" }, label)
+            )
+          ),
+
+          React.createElement("button", {
+            className: `kd-nav-item ${activeNav === "cart" ? "active" : ""}`,
+            onClick: () => setActiveNav("cart"),
+            style: { position: "relative" },
+          },
+            React.createElement("svg", { viewBox: "0 0 24 24", className: "kd-icon" },
+              React.createElement("path", { d: "M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" }),
+              React.createElement("path", { d: "M3 6h18" }),
+              React.createElement("path", { d: "M16 10a4 4 0 01-8 0" })
+            ),
+            cartCount > 0 && React.createElement("span", {
+              style: {
                 position: "absolute", top: "6px", right: expanded ? "12px" : "6px",
                 background: "#ef4444", color: "#fff", borderRadius: "999px",
                 fontSize: "10px", fontWeight: "700", minWidth: "18px", height: "18px",
                 display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px",
-              }}>{cartCount}</span>
-            )}
-            {expanded && <p className="kd-nav-text">Cart</p>}
-          </button>
-        </nav>
-      </aside>
+              },
+            }, cartCount),
+            expanded && React.createElement("p", { className: "kd-nav-text" }, "Cart")
+          )
+        )
+      ),
 
-      {/* MAIN */}
-      <section className="kd-main">
-        <header className="kd-topbar">
-          <section>
-            <h1 className="kd-page-title" style={{ fontFamily: "'Baloo 2', sans-serif" }}>
-              {activeNav === "vendors" && (selectedVendor ? selectedVendor.businessName : "Vendors")}
-              {activeNav === "cart"    && "Cart & Checkout"}
-              {activeNav === "orders"  && "My Orders"}
-              {activeNav === "overview" && "Overview"}
-              {activeNav === "about"   && "About"}
-              {activeNav === "settings" && "Settings"}
-            </h1>
-            <p className="kd-page-sub">
-              {activeNav === "vendors" && (selectedVendor ? "Browse items" : "Choose where to order from")}
-              {activeNav === "cart"    && "Review your order and place it"}
-              {activeNav === "orders"  && "Your order history"}
-              {activeNav === "overview" && "Welcome to KuduDash"}
-            </p>
-          </section>
+      React.createElement("section", { className: "kd-main" },
 
-          {/* ── ProfilePanel replaces the missing avatar ── */}
-          <ProfilePanel role="student" user={studentProfile} />
-        </header>
+        React.createElement("header", { className: "kd-topbar" },
+          React.createElement("section", null,
+            React.createElement("h1", { className: "kd-page-title", style: { fontFamily: "'Baloo 2', sans-serif" } },
+              activeNav === "vendors"  && (selectedVendor ? selectedVendor.businessName : "Vendors"),
+              activeNav === "cart"     && "Cart & Checkout",
+              activeNav === "orders"   && "My Orders",
+              activeNav === "overview" && "Overview",
+              activeNav === "about"    && "About",
+              activeNav === "settings" && "Settings"
+            ),
+            React.createElement("p", { className: "kd-page-sub" },
+              activeNav === "vendors"  && (selectedVendor ? "Browse items" : "Choose where to order from"),
+              activeNav === "cart"     && "Review your order and place it",
+              activeNav === "orders"   && "Your order history",
+              activeNav === "overview" && "Welcome to KuduDash"
+            )
+          ),
+          React.createElement(ProfilePanel, { role: "student", user: studentProfile })
+        ),
 
-        {/* VENDORS PAGE */}
-        {activeNav === "vendors" && (
-          <>
-            {!selectedVendor ? (
-              <section className="kd-grid">
-                {loadingVendors ? <p className="kd-state-msg">Loading vendors...</p>
-                  : error ? <p className="kd-state-msg kd-error">{error}</p>
-                  : vendors.length === 0 ? <p className="kd-state-msg">No vendors available.</p>
-                  : vendors.map((vendor) => (
-                    <article key={vendor._id} className="kd-vendor-card" onClick={() => setSelectedVendor(vendor)}>
-                      <header>
-                        <figure>
-                          {vendor.logo
-                            ? <img src={vendor.logo} alt={vendor.businessName} className="kd-vendor-logo" />
-                            : <abbr title={vendor.businessName}>{vendor.businessName[0]}</abbr>}
-                        </figure>
-                        <hgroup><h2>{vendor.businessName}</h2><p><small>{vendor.location}</small></p></hgroup>
-                      </header>
-                      <p>{vendor.description}</p>
-                    </article>
-                  ))}
-              </section>
-            ) : (
-              <section className="kd-menu-view">
-                <button className="kd-back-btn" onClick={() => { setSelectedVendor(null); setMenuItems([]); setActiveCategory("All"); }}>
-                  ← Back
-                </button>
-                <nav className="kd-category-bar" aria-label="Filter by category">
-                  {["All", ...CATEGORIES].map((cat) => {
+        activeNav === "vendors" && (
+          !selectedVendor
+            ? React.createElement("section", { className: "kd-grid" },
+                loadingVendors
+                  ? React.createElement("p", { className: "kd-state-msg" }, "Loading vendors...")
+                  : error
+                  ? React.createElement("p", { className: "kd-state-msg kd-error" }, error)
+                  : vendors.length === 0
+                  ? React.createElement("p", { className: "kd-state-msg" }, "No vendors available.")
+                  : vendors.map((vendor) =>
+                      React.createElement("article", {
+                        key: vendor._id,
+                        className: "kd-vendor-card",
+                        onClick: () => setSelectedVendor(vendor),
+                      },
+                        React.createElement("header", null,
+                          React.createElement("figure", null,
+                            vendor.logo
+                              ? React.createElement("img", { src: vendor.logo, alt: vendor.businessName, className: "kd-vendor-logo" })
+                              : React.createElement("abbr", { title: vendor.businessName }, vendor.businessName[0])
+                          ),
+                          React.createElement("hgroup", null,
+                            React.createElement("h2", null, vendor.businessName),
+                            React.createElement("p", null, React.createElement("small", null, vendor.location))
+                          )
+                        ),
+                        React.createElement("p", null, vendor.description)
+                      )
+                    )
+              )
+            : React.createElement("section", { className: "kd-menu-view" },
+                React.createElement("button", {
+                  className: "kd-back-btn",
+                  onClick: () => { setSelectedVendor(null); setMenuItems([]); setActiveCategory("All"); },
+                }, "← Back"),
+
+                React.createElement("nav", { className: "kd-category-bar", "aria-label": "Filter by category" },
+                  ["All", ...CATEGORIES].map((cat) => {
                     const count = cat === "All" ? menuItems.length : menuItems.filter((i) => i.category === cat).length;
-                    return (
-                      <button key={cat} className={`kd-category-chip ${activeCategory === cat ? "active" : ""}`}
-                        onClick={() => setActiveCategory(cat)} aria-pressed={activeCategory === cat}>
-                        {cat}<span className="kd-category-count">{count}</span>
-                      </button>
+                    return React.createElement("button", {
+                      key: cat,
+                      className: `kd-category-chip ${activeCategory === cat ? "active" : ""}`,
+                      onClick: () => setActiveCategory(cat),
+                      "aria-pressed": activeCategory === cat,
+                    },
+                      cat,
+                      React.createElement("span", { className: "kd-category-count" }, count)
                     );
-                  })}
-                </nav>
-                {loadingMenu && <p className="kd-state-msg">Loading menu...</p>}
-                <section className="kd-menu-grid" aria-label="Menu items">
-                  {!loadingMenu && filteredItems.length === 0
-                    ? <p className="kd-state-msg">No items in this category.</p>
-                    : filteredItems.map((item) => (
-                      <article key={item._id} className="kd-menu-card">
-                        <figure>{item.imageUrl && <img src={item.imageUrl} alt={item.name} className="kd-menu-image" loading="lazy" />}</figure>
-                        <section>
-                          <h2>{item.name}</h2>
-                          <p>{item.description}</p>
-                          {item.category && <p><small>{item.category}</small></p>}
-                        </section>
-                        <footer>
-                          <data value={item.price}>R{Number(item.price).toFixed(2)}</data>
-                          <button className="kd-btn" onClick={() => handleAddToCart(item)} disabled={item.soldOut}>
-                            {item.soldOut ? "Sold Out" : "+ Add"}
-                          </button>
-                        </footer>
-                      </article>
-                    ))}
-                </section>
-              </section>
-            )}
-          </>
-        )}
+                  })
+                ),
 
-        {/* CART PAGE */}
-        {activeNav === "cart" && (
-          <section className="kd-checkout-view">
-            {cartItems.length === 0 ? (
-              <div className="kd-empty-state" role="status">
-                <svg className="kd-empty-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 01-8 0" />
-                </svg>
-                <p>Your cart is empty.</p>
-                <button className="kd-btn primary" onClick={() => setActiveNav("vendors")}>Browse Vendors</button>
-              </div>
-            ) : (
-              <section className="kd-checkout-grid">
-                <section className="kd-order-summary">
-                  <h2 className="kd-summary-title">Order Summary</h2>
-                  {cartByVendor.map((vendorCart) => (
-                    <article key={vendorCart.vendorId} className="kd-vendor-checkout-section">
-                      <h3 className="kd-vendor-checkout-name">{vendorCart.vendorName}</h3>
-                      {vendorCart.items.map((item) => (
-                        <section key={item.itemId} className="kd-checkout-item">
-                          <p className="kd-checkout-item-name">
-                            <span className="kd-checkout-item-quantity">{item.quantity}×</span>
-                            <span>{item.name}</span>
-                          </p>
-                          <section className="kd-checkout-item-controls">
-                            <button className="kd-qty-btn" onClick={() => updateQuantity(item.itemId, item.quantity - 1)}>−</button>
-                            <span>{item.quantity}</span>
-                            <button className="kd-qty-btn" onClick={() => updateQuantity(item.itemId, item.quantity + 1)}>+</button>
-                            <button className="kd-remove-btn" onClick={() => removeFromCart(item.itemId)}>🗑</button>
-                            <span>R{(item.price * item.quantity).toFixed(2)}</span>
-                          </section>
-                        </section>
-                      ))}
-                      <footer className="kd-vendor-checkout-subtotal">
-                        <span>Subtotal</span><span>R{vendorCart.subtotal.toFixed(2)}</span>
-                      </footer>
-                    </article>
-                  ))}
-                  <button className="kd-btn danger" style={{ marginTop: "16px" }} onClick={clearCart}>Clear Cart</button>
-                </section>
+                loadingMenu && React.createElement("p", { className: "kd-state-msg" }, "Loading menu..."),
 
-                <aside className="kd-payment-panel">
-                  <h2 className="kd-payment-title">Payment Summary</h2>
-                  <section className="kd-payment-row"><span>Subtotal ({itemCount} {itemCount === 1 ? "item" : "items"})</span><span>R{cartTotal.toFixed(2)}</span></section>
-                  <section className="kd-payment-row"><span>Delivery Fee</span><span>R0.00</span></section>
-                  <section className="kd-payment-row"><span>Service Fee</span><span>R0.00</span></section>
-                  <footer className="kd-payment-row total"><span>Total</span><span>R{cartTotal.toFixed(2)}</span></footer>
-                  {cartByVendor.length > 1 && (
-                    <aside className="kd-info-message">🛒 You have items from {cartByVendor.length} vendors — a separate order will be placed for each.</aside>
-                  )}
-                  {checkoutError && <aside className="kd-error-message">{checkoutError}</aside>}
-                  <button className="kd-place-order-btn" onClick={handlePlaceOrder} disabled={isProcessing}>
-                    {isProcessing ? "Processing..." : `Place ${cartByVendor.length > 1 ? `${cartByVendor.length} Orders` : "Order"} →`}
-                  </button>
-                  <button className="kd-btn ghost" style={{ width: "100%", marginTop: "8px" }} onClick={() => setActiveNav("vendors")}>
-                    ← Continue Shopping
-                  </button>
-                </aside>
-              </section>
-            )}
-          </section>
-        )}
+                React.createElement("section", { className: "kd-menu-grid", "aria-label": "Menu items" },
+                  !loadingMenu && filteredItems.length === 0
+                    ? React.createElement("p", { className: "kd-state-msg" }, "No items in this category.")
+                    : filteredItems.map((item) =>
+                        React.createElement("article", { key: item._id, className: "kd-menu-card" },
+                          React.createElement("figure", null,
+                            item.imageUrl && React.createElement("img", {
+                              src: item.imageUrl, alt: item.name, className: "kd-menu-image", loading: "lazy",
+                            })
+                          ),
+                          React.createElement("section", null,
+                            React.createElement("h2", null, item.name),
+                            React.createElement("p", null, item.description),
+                            item.category && React.createElement("p", null, React.createElement("small", null, item.category))
+                          ),
+                          React.createElement("footer", null,
+                            React.createElement("data", { value: item.price }, `R${Number(item.price).toFixed(2)}`),
+                            React.createElement("button", {
+                              className: "kd-btn",
+                              onClick: () => handleAddToCart(item),
+                              disabled: item.soldOut,
+                            }, item.soldOut ? "Sold Out" : "+ Add")
+                          )
+                        )
+                      )
+                )
+              )
+        ),
 
-        {/* ORDERS PAGE */}
-        {activeNav === "orders" && (
-          <section aria-label="Orders">
-            {orderSuccess && (
-              <aside className="kd-success-banner">
-                ✅ {orderSuccess.length} order{orderSuccess.length > 1 ? "s" : ""} placed successfully!
-                {orderSuccess.map((order) => <p key={order._id}>Order ID: <strong>{order._id}</strong></p>)}
-              </aside>
-            )}
-            <p className="kd-state-msg">Order history coming soon.</p>
-          </section>
-        )}
+        activeNav === "cart" && React.createElement("section", { className: "kd-checkout-view" },
+          cartItems.length === 0
+            ? React.createElement("div", { className: "kd-empty-state", role: "status" },
+                React.createElement("svg", { className: "kd-empty-icon", viewBox: "0 0 24 24", "aria-hidden": "true" },
+                  React.createElement("path", { d: "M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" }),
+                  React.createElement("path", { d: "M3 6h18" }),
+                  React.createElement("path", { d: "M16 10a4 4 0 01-8 0" })
+                ),
+                React.createElement("p", null, "Your cart is empty."),
+                React.createElement("button", {
+                  className: "kd-btn primary",
+                  onClick: () => setActiveNav("vendors"),
+                }, "Browse Vendors")
+              )
+            : React.createElement("section", { className: "kd-checkout-grid" },
 
-        {(activeNav === "overview" || activeNav === "about" || activeNav === "settings") && (
-          <section>
-            <p style={{ color: "#475569", fontSize: "14px" }}>
-              The <strong>{activeNav}</strong> section is not yet implemented.
-            </p>
-          </section>
-        )}
-      </section>
-    </main>
+                React.createElement("section", { className: "kd-order-summary" },
+                  React.createElement("h2", { className: "kd-summary-title" }, "Order Summary"),
+                  cartByVendor.map((vendorCart) =>
+                    React.createElement("article", { key: vendorCart.vendorId, className: "kd-vendor-checkout-section" },
+                      React.createElement("h3", { className: "kd-vendor-checkout-name" }, vendorCart.vendorName),
+                      vendorCart.items.map((item) =>
+                        React.createElement("section", { key: item._id, className: "kd-checkout-item" },
+                          React.createElement("p", { className: "kd-checkout-item-name" },
+                            React.createElement("span", { className: "kd-checkout-item-quantity" }, `${item.quantity}×`),
+                            React.createElement("span", null, item.name)
+                          ),
+                          React.createElement("section", { className: "kd-checkout-item-controls" },
+                            React.createElement("button", { className: "kd-qty-btn", onClick: () => updateQuantity(item._id, item.quantity - 1) }, "−"),
+                            React.createElement("span", null, item.quantity),
+                            React.createElement("button", { className: "kd-qty-btn", onClick: () => updateQuantity(item._id, item.quantity + 1) }, "+"),
+                            React.createElement("button", { className: "kd-remove-btn", onClick: () => removeFromCart(item._id) }, "🗑"),
+                            React.createElement("span", null, `R${(item.price * item.quantity).toFixed(2)}`)
+                          )
+                        )
+                      ),
+                      React.createElement("footer", { className: "kd-vendor-checkout-subtotal" },
+                        React.createElement("span", null, "Subtotal"),
+                        React.createElement("span", null, `R${vendorCart.subtotal.toFixed(2)}`)
+                      )
+                    )
+                  ),
+                  React.createElement("button", {
+                    className: "kd-btn danger",
+                    style: { marginTop: "16px" },
+                    onClick: clearCart,
+                  }, "Clear Cart")
+                ),
+
+                React.createElement("aside", { className: "kd-payment-panel" },
+                  React.createElement("h2", { className: "kd-payment-title" }, "Payment Summary"),
+                  React.createElement("section", { className: "kd-payment-row" },
+                    React.createElement("span", null, `Subtotal (${itemCount} ${itemCount === 1 ? "item" : "items"})`),
+                    React.createElement("span", null, `R${cartTotal.toFixed(2)}`)
+                  ),
+                  React.createElement("section", { className: "kd-payment-row" },
+                    React.createElement("span", null, "Delivery Fee"),
+                    React.createElement("span", null, "R0.00")
+                  ),
+                  React.createElement("section", { className: "kd-payment-row" },
+                    React.createElement("span", null, "Service Fee"),
+                    React.createElement("span", null, "R0.00")
+                  ),
+                  React.createElement("footer", { className: "kd-payment-row total" },
+                    React.createElement("span", null, "Total"),
+                    React.createElement("span", null, `R${cartTotal.toFixed(2)}`)
+                  ),
+                  cartByVendor.length > 1 && React.createElement("aside", { className: "kd-info-message" },
+                    `🛒 You have items from ${cartByVendor.length} vendors — a separate order will be placed for each.`
+                  ),
+                  checkoutError && React.createElement("aside", { className: "kd-error-message" }, checkoutError),
+                  React.createElement("button", {
+                    className: "kd-place-order-btn",
+                    onClick: handlePlaceOrder,
+                    disabled: isProcessing,
+                  }, isProcessing ? "Processing..." : `Place ${cartByVendor.length > 1 ? `${cartByVendor.length} Orders` : "Order"} →`),
+                  React.createElement("button", {
+                    className: "kd-btn ghost",
+                    style: { width: "100%", marginTop: "8px" },
+                    onClick: () => setActiveNav("vendors"),
+                  }, "← Continue Shopping")
+                )
+              )
+        ),
+
+        activeNav === "orders" && React.createElement("section", { "aria-label": "Orders" },
+          orderSuccess && React.createElement("aside", { className: "kd-success-banner" },
+            `✅ ${orderSuccess.length} order${orderSuccess.length > 1 ? "s" : ""} placed successfully!`,
+            orderSuccess.map((order) =>
+              React.createElement("p", { key: order._id },
+                "Order ID: ", React.createElement("strong", null, order._id)
+              )
+            )
+          ),
+          React.createElement("p", { className: "kd-state-msg" }, "Order history coming soon.")
+        ),
+
+        (activeNav === "overview" || activeNav === "about" || activeNav === "settings") &&
+          React.createElement("section", null,
+            React.createElement("p", { style: { color: "#475569", fontSize: "14px" } },
+              "The ", React.createElement("strong", null, activeNav), " section is not yet implemented."
+            )
+          )
+      )
+    )
   );
 };
 

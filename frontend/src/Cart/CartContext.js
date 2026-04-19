@@ -1,98 +1,154 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, {
+  createContext, useContext, useState, useEffect, useCallback,
+} from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 
 const CartContext = createContext();
+const API = "/api/cart";
 
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState([]);
+  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
+  const [cart, setCart]       = useState({ items: [], total: 0, itemCount: 0 });
+  const [loading, setLoading] = useState(false);
 
-  // Add item — merges quantity if same item+vendor already in cart
-  const addToCart = (item, vendorId, vendorName) => {
-    setCartItems((prev) => {
-      const existing = prev.find(
-        (i) => i.itemId === item._id && i.vendorId === vendorId
-      );
-      if (existing) {
-        return prev.map((i) =>
-          i.itemId === item._id && i.vendorId === vendorId
-            ? { ...i, quantity: i.quantity + 1 }
-            : i
-        );
-      }
-      return [
-        ...prev,
-        {
-          itemId: item._id,
-          name: item.name,
-          price: item.price,
-          quantity: 1,
-          vendorId,
-          vendorName,
-        },
-      ];
+  const getHeaders = useCallback(async () => {
+    const token = await getAccessTokenSilently({
+      authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
     });
-  };
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+  }, [getAccessTokenSilently]);
 
-  // Remove item entirely
-  const removeFromCart = (itemId) => {
-    setCartItems((prev) => prev.filter((i) => i.itemId !== itemId));
-  };
+  // Load cart from DB on login
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const headers = await getHeaders();
+        const res  = await fetch(API, { headers });
+        const data = await res.json();
+        setCart(data);
+      } catch (err) {
+        console.error("Failed to load cart:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [isAuthenticated, getHeaders]);
 
-  // Set specific quantity — removes item if quantity drops to 0
-  const updateQuantity = (itemId, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(itemId);
-      return;
+  const addToCart = async (item, vendorId, vendorName) => {
+    try {
+      const headers = await getHeaders();
+      const res = await fetch(`${API}/items`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          menuItem:   item._id,
+          name:       item.name,
+          price:      item.price,
+          quantity:   1,
+          vendor:     vendorId,
+          vendorName,
+          imageUrl:   item.imageUrl || "",
+        }),
+      });
+      const data = await res.json();
+      setCart(data);
+    } catch (err) {
+      console.error("Failed to add item:", err);
     }
-    setCartItems((prev) =>
-      prev.map((i) => (i.itemId === itemId ? { ...i, quantity } : i))
-    );
   };
 
-  // Wipe the whole cart
-  const clearCart = () => setCartItems([]);
+  const updateQuantity = async (itemId, quantity) => {
+    try {
+      const headers = await getHeaders();
+      const res = await fetch(`${API}/items/${itemId}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ quantity }),
+      });
+      const data = await res.json();
+      setCart(data);
+    } catch (err) {
+      console.error("Failed to update quantity:", err);
+    }
+  };
 
-  // Group cart items by vendor — returns array of vendor buckets
+  const removeFromCart = async (itemId) => {
+    try {
+      const headers = await getHeaders();
+      const res = await fetch(`${API}/items/${itemId}`, {
+        method: "DELETE",
+        headers,
+      });
+      const data = await res.json();
+      setCart(data);
+    } catch (err) {
+      console.error("Failed to remove item:", err);
+    }
+  };
+
+  const clearCart = async () => {
+    try {
+      const headers = await getHeaders();
+      await fetch(API, { method: "DELETE", headers });
+      setCart({ items: [], total: 0, itemCount: 0 });
+    } catch (err) {
+      console.error("Failed to clear cart:", err);
+    }
+  };
+
+  // Groups items by vendor — used in Student.js cart view
   const getCartByVendor = () => {
     const map = {};
-    cartItems.forEach((item) => {
-      if (!map[item.vendorId]) {
-        map[item.vendorId] = {
-          vendorId: item.vendorId,
+    cart.items.forEach((item) => {
+      const vid = item.vendor?._id || item.vendor;
+      if (!map[vid]) {
+        map[vid] = {
+          vendorId:   vid,
           vendorName: item.vendorName,
-          items: [],
-          subtotal: 0,
+          items:      [],
+          subtotal:   0,
         };
       }
-      map[item.vendorId].items.push(item);
-      map[item.vendorId].subtotal += item.price * item.quantity;
+      map[vid].items.push(item);
+      map[vid].subtotal += item.price * item.quantity;
     });
     return Object.values(map);
   };
 
-  // Derived values
-  const cartTotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity, 0
-  );
-  const cartCount = cartItems.reduce(
-    (sum, item) => sum + item.quantity, 0
-  );
-
   return (
-    <CartContext.Provider
-      value={{
-        cartItems,
-        cartTotal,
-        cartCount,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        getCartByVendor,
-      }}
-    >
+    <CartContext.Provider value={{
+      cartItems:      cart.items,
+      cartTotal:      cart.total,
+      cartCount:      cart.itemCount,
+      loading,
+      addToCart,
+      updateQuantity,
+      removeFromCart,
+      clearCart,
+      getCartByVendor,
+    }}>
       {children}
     </CartContext.Provider>
   );
 };
 
 export const useCart = () => useContext(CartContext);
+
+// Inlined here so AddToCart.js can be deleted
+export const AddToCartButton = ({ item, vendorId, vendorName, className, disabled, label }) => {
+  const { addToCart } = useCart();
+  return (
+    <button
+      className={className}
+      disabled={disabled}
+      onClick={() => addToCart(item, vendorId, vendorName)}
+    >
+      {label || "Add to Cart"}
+    </button>
+  );
+};

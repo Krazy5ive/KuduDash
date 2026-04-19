@@ -1,11 +1,17 @@
 const express = require("express");
-const router = express.Router();
-const { getCart, addToCart, updateCartItem, removeFromCart, clearCart } = require("../controllers/cartController");
+const router  = express.Router();
+const { verifyToken, attachStudent } = require("../middleware/auth");
+const {
+  getCart, addItem, updateItemQuantity, removeItem, clearCart,
+} = require("../controllers/cartController");
 
-router.get("/:studentId", getCart);
-router.post("/", addToCart);
-router.put("/:studentId/items/:itemId", updateCartItem);
-router.delete("/:studentId/items/:itemId", removeFromCart);
-router.delete("/:studentId", clearCart);
+// All cart routes require a verified, attached student
+router.use(verifyToken, attachStudent);
+
+router.get("/",                 getCart);
+router.post("/items",           addItem);
+router.patch("/items/:itemId",  updateItemQuantity);
+router.delete("/items/:itemId", removeItem);
+router.delete("/",              clearCart);
 
 module.exports = router;
