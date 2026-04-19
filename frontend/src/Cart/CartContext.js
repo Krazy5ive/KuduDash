@@ -30,7 +30,7 @@ export const CartProvider = ({ children }) => {
         const headers = await getHeaders();
         const res  = await fetch(API, { headers });
         const data = await res.json();
-        setCart(data);
+        setCart(data.items ? data : { items: [], total: 0, itemCount: 0 });
       } catch (err) {
         console.error("Failed to load cart:", err);
       } finally {
@@ -56,7 +56,7 @@ export const CartProvider = ({ children }) => {
         }),
       });
       const data = await res.json();
-      setCart(data);
+      if (data.items) setCart(data);
     } catch (err) {
       console.error("Failed to add item:", err);
     }
@@ -71,7 +71,7 @@ export const CartProvider = ({ children }) => {
         body: JSON.stringify({ quantity }),
       });
       const data = await res.json();
-      setCart(data);
+      if (data.items) setCart(data);
     } catch (err) {
       console.error("Failed to update quantity:", err);
     }
@@ -85,7 +85,7 @@ export const CartProvider = ({ children }) => {
         headers,
       });
       const data = await res.json();
-      setCart(data);
+      if (data.items) setCart(data);
     } catch (err) {
       console.error("Failed to remove item:", err);
     }
@@ -104,7 +104,7 @@ export const CartProvider = ({ children }) => {
   // Groups items by vendor — used in Student.js cart view
   const getCartByVendor = () => {
     const map = {};
-    cart.items.forEach((item) => {
+    (cart.items || []).forEach((item) => {
       const vid = item.vendor?._id || item.vendor;
       if (!map[vid]) {
         map[vid] = {
