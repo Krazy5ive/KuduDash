@@ -6,22 +6,29 @@ import Vibe from "./Vibe";
 import Student from "./Dashboards/Student";
 import Vendor from "./Dashboards/Vendor";
 import Admin from "./Dashboards/Admin";
+import PaymentPage from "./payment/Payment";
 import { CartProvider } from "./Cart/CartContext";
 
 function App() {
   const location = useLocation();
   return (
-    <CartProvider>
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Login />} />
-          <Route path="/vibe" element={<Vibe />} />
-          <Route path="/dashboard/student" element={<Student />} />
-          <Route path="/dashboard/vendor" element={<Vendor />} />
-          <Route path="/dashboard/admin" element={<Admin />} />
-        </Routes>
-      </AnimatePresence>
-    </CartProvider>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Login />} />
+        <Route path="/vibe" element={<Vibe />} />
+        <Route path="/dashboard/vendor" element={<Vendor />} />
+        <Route path="/dashboard/admin" element={<Admin />} />
+        <Route path="/dashboard/student" element={
+          <CartProvider><Student /></CartProvider>
+        } />
+        <Route path="/payment/:orderId" element={
+          <CartProvider><PaymentPage /></CartProvider>
+        } />
+        <Route path="/payment/result/:orderId" element={
+          <CartProvider><PaymentPage showResult /></CartProvider>
+        } />
+      </Routes>
+    </AnimatePresence>
   );
 }
 

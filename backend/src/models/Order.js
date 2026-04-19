@@ -26,9 +26,9 @@ const orderSchema = new Schema(
         //order lifecycle
         status:{type: String,
             enum: [
-                "pending",    // placed, awaiting payment
+                "pending",    // placed, awaiting vendor confirmation
+                "received",   // vendor confirmed, awaiting payment
                 "paid",       // payment confirmed
-                "received",   // vendor acknowledged
                 "preparing",  // kitchen is working on it
                 "ready",      // ready for student pickup
                 "collected",  // student collected

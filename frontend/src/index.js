@@ -19,6 +19,8 @@ root.render(
           redirect_uri: `${window.location.origin}/vibe`,
           audience: process.env.REACT_APP_AUTH0_AUDIENCE,
         }}
+        useRefreshTokens={true}
+        cacheLocation="localstorage"
       >
         <App />
       </Auth0Provider>

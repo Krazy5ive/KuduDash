@@ -1,8 +1,7 @@
 const Order = require("../models/Order");
 
+// Vendor can set these — "paid" is set exclusively by the payment flow
 const VALID_STATUSES = [
-  "pending",
-  "paid",
   "received",
   "preparing",
   "ready",

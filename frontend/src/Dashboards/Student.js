@@ -1,5 +1,6 @@
 // Student.js
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useCart } from "../Cart/CartContext";
 import { useAuth0 } from "@auth0/auth0-react";
 import "./Student.css";
@@ -43,8 +44,9 @@ const Student = () => {
   } = useCart();
   const { getAccessTokenSilently, user: auth0User } = useAuth0();
 
+  const [searchParams] = useSearchParams();
   const [expanded, setExpanded] = useState(false);
-  const [activeNav, setActiveNav] = useState("vendors");
+  const [activeNav, setActiveNav] = useState(searchParams.get("tab") || "vendors");
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [vendors, setVendors] = useState([]);
   const [menuItems, setMenuItems] = useState([]);

@@ -10,6 +10,12 @@ const {
   uploadLogoMiddleware,
 } = require("../controllers/vendorController");
 
+const { verifyToken, attachVendor } = require("../middleware/auth");
+const { getVendorOrders } = require("../controllers/orderController");
+
+// Vendor's own orders — separate URL avoids any /:id route conflict
+router.get("/orders", verifyToken, attachVendor, getVendorOrders);
+
 router.get("/",     getAllVendors);
 router.get("/:id",  getVendorById);
 router.post("/",    createVendor);

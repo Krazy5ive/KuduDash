@@ -7,9 +7,9 @@ const POLL_INTERVAL = 5000;
 
 // FIX 1: pending can now advance to received (no real payment step yet)
 const NEXT_STATUS = {
-  pending:   "received",   // ← was null, vendor can now accept
-  paid:      "received",
-  received:  "preparing",
+  pending:   "received",   // vendor accepts order
+  received:  null,         // waiting for student payment — vendor cannot advance
+  paid:      "preparing",  // payment confirmed, vendor starts preparing
   preparing: "ready",
   ready:     "collected",
   collected: null,
@@ -18,8 +18,7 @@ const NEXT_STATUS = {
 
 const NEXT_LABEL = {
   pending:   "Accept Order",
-  paid:      "Mark Received",
-  received:  "Start Preparing",
+  paid:      "Start Preparing",
   preparing: "Mark Ready",
   ready:     "Mark Collected",
 };
@@ -246,10 +245,13 @@ const OrderManagement = () => {
     try {
       const token = await getToken();
       console.log("Fetching vendor orders...");
-      const res = await fetch("/api/orders/vendor", {
+      const res = await fetch("/api/vendors/orders", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Failed to fetch orders");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Failed to fetch orders (${res.status})`);
+      }
       const data = await res.json();
       console.log("Orders fetched:", data.length);
       setOrders(data);

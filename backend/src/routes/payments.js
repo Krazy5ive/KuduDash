@@ -1,24 +1,15 @@
-const express  = require('express');
-const router   = express.Router();
-const { checkJwt, checkVendor } = require('../middleware/auth');    // your existing Auth0 middleware
-const ctrl     = require('../controllers/paymentController');
+const express = require('express');
+const router  = express.Router();
+const { verifyToken, attachStudent } = require('../middleware/auth');
+const ctrl = require('../controllers/paymentController');
 
-// ── Student-facing routes (require student JWT) ───────────────────────────────
+// Student initiates payment for a confirmed order
+router.post('/initiate',         verifyToken, attachStudent, ctrl.initiatePayment);
 
-// Create a Stripe PaymentIntent for an order
-router.post('/create-intent', checkJwt, ctrl.createPaymentIntent);
+// PayFast ITN callback — no JWT, signed by PayFast
+router.post('/notify',           ctrl.handleNotify);
 
-// Verify payment status after Stripe redirects back (also handles UAT 4 amount check)
-router.get('/verify/:orderId', checkJwt, ctrl.verifyPayment);
-
-// ── Vendor-facing route ────────────────────────────────────────────────────────
-
-// UAT 5: vendor earnings / confirmed payments dashboard data
-router.get('/vendor/earnings', checkJwt, checkVendor, ctrl.getVendorEarnings);
-
-// ── Stripe webhook (NO JWT — signed by Stripe instead) ────────────────────────
-// NOTE: Mount this BEFORE express.json() in server.js so the raw body is preserved.
-// In server.js: app.use('/api/payments/webhook', express.raw({ type: 'application/json' }), paymentRouter)
-router.post('/webhook', ctrl.handleWebhook);
+// Frontend polls this after PayFast redirects back
+router.get('/verify/:orderId',   verifyToken, attachStudent, ctrl.verifyPayment);
 
 module.exports = router;

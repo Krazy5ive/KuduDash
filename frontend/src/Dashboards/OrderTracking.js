@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import "./OrderTracking.css";
 
 const STATUS_STEPS = [
-  { key: "pending",    label: "Placed",     description: "Order received" },
+  { key: "pending",    label: "Placed",     description: "Order received, awaiting vendor confirmation" },
+  { key: "received",   label: "Confirmed",  description: "Vendor confirmed — complete your payment" },
   { key: "paid",       label: "Paid",       description: "Payment confirmed" },
-  { key: "received",   label: "Received",   description: "Vendor acknowledged" },
   { key: "preparing",  label: "Preparing",  description: "Kitchen is on it" },
   { key: "ready",      label: "Ready",      description: "Come collect your order" },
   { key: "collected",  label: "Collected",  description: "Enjoy" },
@@ -34,6 +35,7 @@ const formatDate = (dateStr) => {
 
 // ── Single order expanded detail ─────────────────────────────────────
 const OrderDetail = ({ order, onBack }) => {
+  const navigate    = useNavigate();
   const isCancelled = order.status === "cancelled";
   const steps = isCancelled ? [...STATUS_STEPS] : STATUS_STEPS;
   const currentIdx = isCancelled ? -1 : statusIndex(order.status);
@@ -90,6 +92,16 @@ const OrderDetail = ({ order, onBack }) => {
         </section>
       )}
 
+      {/* PAY NOW — shown when vendor has confirmed */}
+      {order.status === "received" && (
+        <section className="ot-pay-now">
+          <p className="ot-pay-now-msg">Your order has been confirmed by the vendor. Complete your payment to proceed.</p>
+          <button className="ot-pay-now-btn" onClick={() => navigate(`/payment/${order._id}`)}>
+            Pay R{Number(order.totalAmount).toFixed(2)} →
+          </button>
+        </section>
+      )}
+
       {/* COLLECTION CODE — shown when ready */}
       {order.status === "ready" && order.collectionCode && (
         <section className="ot-collection-code">
@@ -134,6 +146,7 @@ const OrderDetail = ({ order, onBack }) => {
 
 // ── Order card in list ───────────────────────────────────────────────
 const OrderCard = ({ order, onClick }) => {
+  const navigate    = useNavigate();
   const isCancelled = order.status === "cancelled";
   const isActive = !["collected", "cancelled"].includes(order.status);
   const currentStep = STATUS_STEPS.find((s) => s.key === order.status);
@@ -168,6 +181,16 @@ const OrderCard = ({ order, onClick }) => {
           {formatDate(order.createdAt)} · R{Number(order.totalAmount).toFixed(2)}
         </p>
       </section>
+
+      {/* Pay Now CTA on the card */}
+      {order.status === "received" && (
+        <button
+          className="ot-card-pay-btn"
+          onClick={(e) => { e.stopPropagation(); navigate(`/payment/${order._id}`); }}
+        >
+          Pay Now →
+        </button>
+      )}
 
       {/* Mini progress bar for active orders */}
       {isActive && !isCancelled && (

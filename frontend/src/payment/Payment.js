@@ -1,24 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import './Payment.css';
 
 function PaymentResult({ orderId }) {
   const [searchParams]                     = useSearchParams();
-  const cancelled                          = searchParams.get('cancelled') === 'true';
-  const [status, setStatus]               = useState(cancelled ? 'cancelled' : 'loading');
+  const isCancelled                        = searchParams.get('cancelled') === 'true';
+  const [status, setStatus]               = useState(isCancelled ? 'cancelled' : 'loading');
   const [message, setMessage]             = useState('');
-  const { getAccessTokenSilently, loginWithRedirect } = useAuth0();
+  const { getAccessTokenSilently, isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
+  const navigate                          = useNavigate();
 
   useEffect(() => {
-    if (cancelled) return;
+    if (isCancelled) return;
+    if (isLoading) return;
+    if (!isAuthenticated) {
+      loginWithRedirect({
+        appState: { returnTo: window.location.pathname + window.location.search },
+      });
+      return;
+    }
+
     let attempts = 0;
+    let dead = false;
 
     async function verify() {
+      if (dead) return;
       try {
         const token = await getAccessTokenSilently({
           authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
-          cacheMode: 'off',
         });
         const res  = await fetch(`/api/payments/verify/${orderId}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -29,11 +39,13 @@ function PaymentResult({ orderId }) {
         if (data.status === 'paid') { setStatus('paid'); return; }
         if (data.status === 'failed') { setStatus('failed'); return; }
 
-        if (++attempts < 5) setTimeout(verify, 3000);
+        if (++attempts < 8) setTimeout(verify, 2500);
         else setStatus('pending');
       } catch (err) {
-        if (err.error === 'consent_required' || err.message === 'Consent required') {
-          setStatus('pending');
+        if (err.error === 'login_required') {
+          loginWithRedirect({
+            appState: { returnTo: window.location.pathname + window.location.search },
+          });
           return;
         }
         setStatus('failed');
@@ -41,7 +53,14 @@ function PaymentResult({ orderId }) {
       }
     }
     verify();
-  }, [orderId, cancelled, getAccessTokenSilently, loginWithRedirect]);
+    return () => { dead = true; };
+  }, [orderId, isCancelled, isAuthenticated, isLoading, getAccessTokenSilently, loginWithRedirect]);
+
+  useEffect(() => {
+    if (status !== 'paid') return;
+    const t = setTimeout(() => navigate('/dashboard/student?tab=orders'), 3000);
+    return () => clearTimeout(t);
+  }, [status, navigate]);
 
   if (status === 'loading') return (
     <div className="kd-payment-status">
@@ -66,10 +85,9 @@ function PaymentResult({ orderId }) {
     <div className="kd-payment-status">
       <div className="kd-payment-status-icon">✅</div>
       <p className="kd-payment-status-title success">Payment confirmed!</p>
-      <p className="kd-payment-status-sub">Your vendor has been notified and is preparing your order. 🎉</p>
+      <p className="kd-payment-status-sub">Your vendor has been notified and is preparing your order. Redirecting to order tracking…</p>
       <div className="kd-payment-actions">
-        <Link to="/dashboard/student" className="kd-payment-action-btn primary">Track My Order →</Link>
-        <Link to="/dashboard/student" className="kd-payment-action-btn secondary">Continue Browsing</Link>
+        <Link to="/dashboard/student?tab=orders" className="kd-payment-action-btn primary">Track My Order →</Link>
       </div>
     </div>
   );
@@ -135,7 +153,7 @@ const PaymentPage = ({ showResult = false }) => {
         setPfUrl(intentData.pfUrl);
 
         const orderData = await orderRes.json();
-        setTotalAmount(orderData.order?.totalAmount ?? 0);
+        setTotalAmount(orderData?.totalAmount ?? 0);
       } catch (err) {
         setInitError(err.message);
       } finally {
