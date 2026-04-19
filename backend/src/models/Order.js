@@ -54,4 +54,18 @@ const orderSchema = new Schema(
 orderSchema.index({student: 1, createdAt: -1});
 orderSchema.index({vendor: 1, status: 1});
 
+// generate per-vendor order number before saving
+orderSchema.pre("save", async function (next) {
+    if (this.orderNumber) return next(); // already set, skip
+
+    const count = await mongoose.model("Order").countDocuments({
+        vendor: this.vendor,
+    });
+
+    const sequence = String(count + 1).padStart(5, "0");
+    this.orderNumber = `ORD-${sequence}`;
+
+    next();
+});
+
 module.exports = mongoose.model("Order", orderSchema);
