@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useCart } from "../Cart/CartContext";
+import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import "./Student.css";
 import ProfilePanel from "./ProfilePanel";
@@ -7,11 +7,8 @@ import ProfilePanel from "./ProfilePanel";
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
 const Student = () => {
-  const {
-    cartItems, cartTotal, cartCount,
-    addToCart, removeFromCart, updateQuantity, clearCart, getCartByVendor,
-  } = useCart();
   const { getAccessTokenSilently, user: auth0User } = useAuth0();
+  const navigate = useNavigate();
 
   const [expanded, setExpanded] = useState(false);
   const [activeNav, setActiveNav] = useState("vendors");
@@ -24,9 +21,10 @@ const Student = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [studentProfile, setStudentProfile] = useState(null);
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [checkoutError, setCheckoutError] = useState("");
-  const [orderSuccess, setOrderSuccess] = useState(null);
+    // Cart count derived from localStorage so the badge stays in sync
+  const [cartCount, setCartCount] = useState(() =>
+    JSON.parse(localStorage.getItem("cart") || "[]").reduce((sum, i) => sum + i.quantity, 0)
+  );
 
   // Fetch student profile for ProfilePanel
   useEffect(() => {
@@ -40,7 +38,9 @@ const Student = () => {
         })
       )
       .then((res) => res.ok ? res.json() : null)
-      .then((data) => { if (data) setStudentProfile(data); })
+      .then((data) => { 
+        if (data) setStudentProfile(data);
+        localStorage.setItem("studentId", data._id); })
       .catch(console.error);
   }, [auth0User, getAccessTokenSilently]);
 
@@ -66,50 +66,67 @@ const Student = () => {
   const filteredItems =
     activeCategory === "All" ? menuItems : menuItems.filter((i) => i.category === activeCategory);
 
-  const handleAddToCart = (item) => {
-    if (!selectedVendor) return;
-    addToCart(item, selectedVendor._id, selectedVendor.businessName);
-  };
-
-  const handlePlaceOrder = async () => {
-    setIsProcessing(true);
-    setCheckoutError("");
-    try {
-      const token = await getAccessTokenSilently({
-        authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
+  const handleAddToCart = async (item) => {
+    console.log("handleAddToCart called", item);
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const existing = cart.find((i) => i.itemId === item._id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({
+        itemId: item._id,
+        name: item.name,
+        price: item.price,
+        quantity: 1,
+        imageUrl: item.imageUrl || null,
+        vendorId: selectedVendor._id,
+        vendorName: selectedVendor.businessName,
       });
-      const cartByVendor = getCartByVendor();
-      const orderPromises = cartByVendor.map((vendorCart) => {
-        const orderData = {
-          vendorId: vendorCart.vendorId,
-          items: vendorCart.items.map((item) => ({
-            itemId: item.itemId, name: item.name, price: item.price,
-            quantity: item.quantity, subtotal: item.price * item.quantity,
-          })),
-          totalAmount: vendorCart.subtotal,
-        };
-        return fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify(orderData),
-        }).then((res) => {
-          if (!res.ok) return res.json().then((e) => { throw new Error(e.message || "Failed to place order"); });
-          return res.json();
-        });
-      });
-      const results = await Promise.all(orderPromises);
-      clearCart();
-      setOrderSuccess(results.map((r) => r.order));
-      setActiveNav("orders");
-    } catch (err) {
-      setCheckoutError(err.message);
-    } finally {
-      setIsProcessing(false);
     }
-  };
+    localStorage.setItem("cart", JSON.stringify(cart));
+    setCartCount(cart.reduce((sum, i) => sum + i.quantity, 0));
 
-  const cartByVendor = getCartByVendor();
-  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    // 2. Sync to MongoDB so checkout(studentId) can read it
+    const studentId = localStorage.getItem("studentId");
+    console.log("studentId:", studentId);
+    console.log("item:", item);
+    console.log("selectedVendor:", selectedVendor);
+    console.log("unitPrice being sent:", Number(item.price));
+
+    if (studentId) {
+      try {
+        const res = await fetch("/api/cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId,
+            vendorId: selectedVendor._id,
+            menuItem: item._id,       // backend field name
+            name: item.name,
+            unitPrice: Number(item.price),    // backend field name
+            quantity: 1,
+            specialNote: "",
+          }),
+        });
+        const result = await res.json();
+
+        // 3. Store cartItemId so Cart.js can update/remove items later
+        const serverItem = result.items?.find(
+          (si) => si.menuItem?.toString() === item._id?.toString()
+        );
+        if (serverItem) {
+          const updatedCart = JSON.parse(localStorage.getItem("cart") || "[]");
+          const local = updatedCart.find((i) => i.itemId === item._id);
+          if (local) local.cartItemId = serverItem._id;
+          localStorage.setItem("cart", JSON.stringify(updatedCart));
+        }
+      } catch (err) {
+        console.error("Failed to sync item to backend cart:", err);
+      }
+    }
+};
+
+  const handleGoToCart = () => navigate("/cart");
 
   return (
     <main className="kd-app">
@@ -135,8 +152,7 @@ const Student = () => {
           ))}
 
           {/* Cart with badge */}
-          <button className={`kd-nav-item ${activeNav === "cart" ? "active" : ""}`}
-            onClick={() => setActiveNav("cart")} style={{ position: "relative" }}>
+          <button className="kd-nav-item" onClick={handleGoToCart} style={{ position: "relative" }}>
             <svg viewBox="0 0 24 24" className="kd-icon">
               <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
               <path d="M3 6h18" /><path d="M16 10a4 4 0 01-8 0" />
@@ -242,78 +258,9 @@ const Student = () => {
           </>
         )}
 
-        {/* CART PAGE */}
-        {activeNav === "cart" && (
-          <section className="kd-checkout-view">
-            {cartItems.length === 0 ? (
-              <div className="kd-empty-state" role="status">
-                <svg className="kd-empty-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 01-8 0" />
-                </svg>
-                <p>Your cart is empty.</p>
-                <button className="kd-btn primary" onClick={() => setActiveNav("vendors")}>Browse Vendors</button>
-              </div>
-            ) : (
-              <section className="kd-checkout-grid">
-                <section className="kd-order-summary">
-                  <h2 className="kd-summary-title">Order Summary</h2>
-                  {cartByVendor.map((vendorCart) => (
-                    <article key={vendorCart.vendorId} className="kd-vendor-checkout-section">
-                      <h3 className="kd-vendor-checkout-name">{vendorCart.vendorName}</h3>
-                      {vendorCart.items.map((item) => (
-                        <section key={item.itemId} className="kd-checkout-item">
-                          <p className="kd-checkout-item-name">
-                            <span className="kd-checkout-item-quantity">{item.quantity}×</span>
-                            <span>{item.name}</span>
-                          </p>
-                          <section className="kd-checkout-item-controls">
-                            <button className="kd-qty-btn" onClick={() => updateQuantity(item.itemId, item.quantity - 1)}>−</button>
-                            <span>{item.quantity}</span>
-                            <button className="kd-qty-btn" onClick={() => updateQuantity(item.itemId, item.quantity + 1)}>+</button>
-                            <button className="kd-remove-btn" onClick={() => removeFromCart(item.itemId)}>🗑</button>
-                            <span>R{(item.price * item.quantity).toFixed(2)}</span>
-                          </section>
-                        </section>
-                      ))}
-                      <footer className="kd-vendor-checkout-subtotal">
-                        <span>Subtotal</span><span>R{vendorCart.subtotal.toFixed(2)}</span>
-                      </footer>
-                    </article>
-                  ))}
-                  <button className="kd-btn danger" style={{ marginTop: "16px" }} onClick={clearCart}>Clear Cart</button>
-                </section>
-
-                <aside className="kd-payment-panel">
-                  <h2 className="kd-payment-title">Payment Summary</h2>
-                  <section className="kd-payment-row"><span>Subtotal ({itemCount} {itemCount === 1 ? "item" : "items"})</span><span>R{cartTotal.toFixed(2)}</span></section>
-                  <section className="kd-payment-row"><span>Delivery Fee</span><span>R0.00</span></section>
-                  <section className="kd-payment-row"><span>Service Fee</span><span>R0.00</span></section>
-                  <footer className="kd-payment-row total"><span>Total</span><span>R{cartTotal.toFixed(2)}</span></footer>
-                  {cartByVendor.length > 1 && (
-                    <aside className="kd-info-message">🛒 You have items from {cartByVendor.length} vendors — a separate order will be placed for each.</aside>
-                  )}
-                  {checkoutError && <aside className="kd-error-message">{checkoutError}</aside>}
-                  <button className="kd-place-order-btn" onClick={handlePlaceOrder} disabled={isProcessing}>
-                    {isProcessing ? "Processing..." : `Place ${cartByVendor.length > 1 ? `${cartByVendor.length} Orders` : "Order"} →`}
-                  </button>
-                  <button className="kd-btn ghost" style={{ width: "100%", marginTop: "8px" }} onClick={() => setActiveNav("vendors")}>
-                    ← Continue Shopping
-                  </button>
-                </aside>
-              </section>
-            )}
-          </section>
-        )}
-
         {/* ORDERS PAGE */}
         {activeNav === "orders" && (
           <section aria-label="Orders">
-            {orderSuccess && (
-              <aside className="kd-success-banner">
-                ✅ {orderSuccess.length} order{orderSuccess.length > 1 ? "s" : ""} placed successfully!
-                {orderSuccess.map((order) => <p key={order._id}>Order ID: <strong>{order._id}</strong></p>)}
-              </aside>
-            )}
             <p className="kd-state-msg">Order history coming soon.</p>
           </section>
         )}
