@@ -1,3 +1,4 @@
+require("../models/MenuItem");
 const Cart = require("../models/Cart");
 
 const getCart = async (req, res) => {
@@ -16,6 +17,12 @@ const addToCart = async (req, res) => {
   try {
     const { studentId, vendorId, menuItem, name, unitPrice, quantity, specialNote } = req.body;
     let cart = await Cart.findOne({ student: studentId });
+
+    if (cart?.status === "pending") {
+      return res.status(400).json({ 
+        message: "You have a pending order. Complete or cancel it before adding items." 
+      });
+    }
 
     if (!cart) {
       cart = new Cart({
@@ -49,6 +56,10 @@ const updateCartItem = async (req, res) => {
     const { quantity } = req.body;
     const cart = await Cart.findOne({ student: req.params.studentId });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
+    
+    if (cart.status === "pending") {
+      return res.status(400).json({ message: "Cannot modify a cart with a pending order." });
+    }
 
     const item = cart.items.id(req.params.itemId);
     if (!item) return res.status(404).json({ message: "Item not found" });
@@ -68,6 +79,10 @@ const removeFromCart = async (req, res) => {
   try {
     const cart = await Cart.findOne({ student: req.params.studentId });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
+    
+    if (cart.status === "pending") {
+      return res.status(400).json({ message: "Cannot modify a cart with a pending order." });
+    }
 
     cart.items = cart.items.filter(
       (item) => item._id.toString() !== req.params.itemId
