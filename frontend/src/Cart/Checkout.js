@@ -45,7 +45,9 @@ const CheckoutPage = () => {
     return Object.values(grouped);
   };
 
+  const cartByVendor = getCartByVendor();
   const hasMultipleVendors = getCartByVendor().length > 1;
+  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
@@ -56,51 +58,55 @@ const CheckoutPage = () => {
         authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
       });
 
-      const cartByVendor = getCartByVendor();
-      const firstVendor = cartByVendor[0];
+      // Place a separate order for each vendor
+      const orderPromises = cartByVendor.map((vendorCart) => {
+        const orderData = {
+          vendorId: vendorCart.vendorId,
+          items: vendorCart.items.map((item) => ({
+            itemId: item.itemId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            subtotal: item.price * item.quantity,
+          })),
+          totalAmount: vendorCart.subtotal,
+        };
 
-      const orderData = {
-        vendorId: firstVendor.vendorId,
-        items: firstVendor.items.map((item) => ({
-          itemId: item.itemId,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          subtotal: item.price * item.quantity,
-        })),
-        totalAmount: firstVendor.subtotal,
-      };
-
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(orderData),
+        return fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(orderData),
+        }).then((res) => {
+          if (!res.ok) {
+            return res.json().then((e) => {
+              throw new Error(e.message || "Failed to place order");
+            });
+          }
+          return res.json();
+        });
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to place order");
-      }
-
-      const data = await response.json();
-      const { order } = data;
-
+      const results = await Promise.all(orderPromises);
       localStorage.removeItem("cart");
-      navigate(`/payment/${order._id}`);
 
+      // If single vendor, go to payment page for that order
+      // If multiple vendors, go to the first order's payment page
+      const firstOrderId = results[0].order._id;
+      navigate(`/payment/${firstOrderId}`, {
+        state: {
+          allOrders: results.map((r) => r.order),
+        },
+      });
     } catch (err) {
       setError(err.message);
     } finally {
       setIsProcessing(false);
     }
   };
-
-  const cartByVendor = getCartByVendor();
-  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-
+  
   return (
     <main className="kd-app">
       {/* SIDEBAR */}
@@ -187,9 +193,8 @@ const CheckoutPage = () => {
 
         {hasMultipleVendors && (
           <aside className="kd-multi-vendor-warning">
-            <span className="kd-warning-icon">⚠️</span>
             <span className="kd-warning-text">
-              Your cart contains items from multiple vendors. They will be processed as separate orders.
+              Your cart contains items from {cartByVendor.length} vendors — a separate order will be placed for each.
             </span>
           </aside>
         )}
@@ -246,9 +251,7 @@ const CheckoutPage = () => {
             </footer>
 
             {error && (
-              <aside className="kd-error-message">
-                {error}
-              </aside>
+              <aside className="kd-error-message">{error}</aside>
             )}
 
             <button
@@ -256,7 +259,7 @@ const CheckoutPage = () => {
               onClick={handlePlaceOrder}
               disabled={isProcessing}
             >
-              {isProcessing ? "Processing..." : "Place Order →"}
+              {isProcessing ? "Processing..." : `Place ${cartByVendor.length > 1 ? `${cartByVendor.length} Orders` : "Order"} →`}
             </button>
 
             <Link to="/cart" className="kd-back-to-cart">
