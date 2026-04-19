@@ -4,6 +4,7 @@ import { useCart } from "../Cart/CartContext";
 import { useAuth0 } from "@auth0/auth0-react";
 import "./Student.css";
 import ProfilePanel from "./ProfilePanel";
+import OrderTracking from "./OrderTracking";
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
@@ -199,13 +200,14 @@ const Student = () => {
             React.createElement("p", { className: "kd-page-sub" },
               activeNav === "vendors"  && (selectedVendor ? "Browse items" : "Choose where to order from"),
               activeNav === "cart"     && "Review your order and place it",
-              activeNav === "orders"   && "Your order history",
+              activeNav === "orders"   && "Track your orders in real time",
               activeNav === "overview" && "Welcome to KuduDash"
             )
           ),
           React.createElement(ProfilePanel, { role: "student", user: studentProfile })
         ),
 
+        // ── Vendors page ──────────────────────────────────────────────
         activeNav === "vendors" && (
           !selectedVendor
             ? React.createElement("section", { className: "kd-grid" },
@@ -288,6 +290,7 @@ const Student = () => {
               )
         ),
 
+        // ── Cart page ──────────────────────────────────────────────────
         activeNav === "cart" && React.createElement("section", { className: "kd-checkout-view" },
           cartItems.length === 0
             ? React.createElement("div", { className: "kd-empty-state", role: "status" },
@@ -373,18 +376,12 @@ const Student = () => {
               )
         ),
 
-        activeNav === "orders" && React.createElement("section", { "aria-label": "Orders" },
-          orderSuccess && React.createElement("aside", { className: "kd-success-banner" },
-            `✅ ${orderSuccess.length} order${orderSuccess.length > 1 ? "s" : ""} placed successfully!`,
-            orderSuccess.map((order) =>
-              React.createElement("p", { key: order._id },
-                "Order ID: ", React.createElement("strong", null, order._id)
-              )
-            )
-          ),
-          React.createElement("p", { className: "kd-state-msg" }, "Order history coming soon.")
-        ),
+        // ── Orders page — now uses OrderTracking ──────────────────────
+        activeNav === "orders" && React.createElement(OrderTracking, {
+          successOrders: orderSuccess,
+        }),
 
+        // ── Other pages ───────────────────────────────────────────────
         (activeNav === "overview" || activeNav === "about" || activeNav === "settings") &&
           React.createElement("section", null,
             React.createElement("p", { style: { color: "#475569", fontSize: "14px" } },

@@ -19,12 +19,14 @@ KuduDash Main/KuduDash/
 │       │   ├── Student.js  
 │       │   └── Vendor.js  
 │       └── routes/  
-│           ├── adminRoutes.js  
-│           ├── auth.routes.js  
-│           ├── menuItemRoutes.js  
-│           ├── orderRoutes.js  
-│           ├── studentRoutes.js  
-│           └── vendorRoutes.js  
+│       |   ├── adminRoutes.js  
+│       |   ├── auth.routes.js  
+│       |   ├── menuItemRoutes.js  
+│       |   ├── orderRoutes.js  
+│       |   ├── studentRoutes.js  
+│       |   └── vendorRoutes.js  
+        |___middleware
+             |___ auth.js
 ├── frontend/  
 │   ├── package.json  
 │   ├── README.md  
@@ -68,6 +70,10 @@ KuduDash Main/KuduDash/
 │       |    └── Vendor.js
         |    |___ ProfilePanel.js
         |    |___ ProfilePanel.css
+        |    |___ OrderManagement.js
+        |    |___ OrderManagement.css
+        |    |___ OrderTracking.js
+        |    |___ OrderTracking.css
         |___ Cart/
             |___ CartContext.js
             |___ CartContext.css

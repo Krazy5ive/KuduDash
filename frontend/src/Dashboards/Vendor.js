@@ -1,8 +1,10 @@
+// Dashboards/Vendor.js
 import React, { useState, useRef, useEffect } from "react";
 import "./Vendor.css";
 import { useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import ProfilePanel from "./ProfilePanel";
+import OrderManagement from "./OrderManagement";
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
@@ -15,14 +17,13 @@ const EMPTY_FORM = {
 };
 
 const Vendor = () => {
-  const { getAccessTokenSilently, loginWithRedirect } = useAuth0();
+  const { getAccessTokenSilently } = useAuth0();
   const location = useLocation();
   const vendorId  = location.state?.vendorId       || "";
 
   const [expanded, setExpanded] = useState(false);
   const [activeNav, setActiveNav] = useState("menu");
   const [menuItems, setMenuItems] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [vendorProfile, setVendorProfile] = useState(null);
 
   const [modal, setModal] = useState(null);
@@ -35,7 +36,6 @@ const Vendor = () => {
 
   useEffect(() => {
     fetchMenuItems();
-    fetchOrders();
     fetchVendorProfile();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -76,30 +76,6 @@ const Vendor = () => {
     }
   };
 
-  const fetchOrders = async () => {
-    try {
-      const token = await getAccessTokenSilently({
-        authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
-      });
-      const response = await fetch("/api/orders", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      setOrders(data);
-    } catch (error) {
-      if (error.error === "consent_required" || error.error === "login_required") {
-        loginWithRedirect({
-          authorizationParams: {
-            audience: process.env.REACT_APP_AUTH0_AUDIENCE,
-            prompt: "consent",
-          },
-        });
-      } else {
-        console.error("Error fetching orders:", error);
-      }
-    }
-  };
-
   // ── Profile update handler (passed to ProfilePanel) ──────────────────
 
   const handleProfileUpdate = async (formData) => {
@@ -107,7 +83,7 @@ const Vendor = () => {
     const res = await fetch(`/api/vendors/${vendorId}/profile`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` },
-      body: formData, // FormData — no Content-Type header, browser sets it with boundary
+      body: formData,
     });
     if (!res.ok) {
       const err = await res.json();
@@ -361,16 +337,15 @@ const Vendor = () => {
         <header className="kd-topbar">
           <section>
             <h1 className="kd-page-title">
-              {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
+              {activeNav === "orders" ? "Orders" : activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
             </h1>
             <p className="kd-page-sub">
-              {activeNav === "menu" ? "Manage what you sell"
-                : activeNav === "orders" ? "View and manage customer orders"
+              {activeNav === "menu"    ? "Manage what you sell"
+                : activeNav === "orders" ? "Manage and advance customer orders"
                 : "Coming soon"}
             </p>
           </section>
 
-          {/* ── ProfilePanel replaces the old kd-avatar figure ── */}
           <ProfilePanel
             role="vendor"
             user={vendorProfile}
@@ -420,36 +395,10 @@ const Vendor = () => {
           </section>
         )}
 
-        {/* ORDERS PAGE */}
-        {activeNav === "orders" && (
-          <section aria-label="Orders management">
-            <header className="kd-menu-toprow">
-              <h2 className="kd-section-title">Customer Orders ({orders.length})</h2>
-            </header>
-            {orders.length === 0 ? (
-              <div className="kd-empty-state" role="status">
-                <svg className="kd-empty-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12v20H6zM6 6h12" /></svg>
-                <p>No orders yet</p>
-              </div>
-            ) : (
-              <ul className="kd-menu-grid" aria-label="Orders list">
-                {orders.map((order) => (
-                  <li key={order.id} className="kd-item-card">
-                    <div className="kd-item-body">
-                      <p className="kd-item-category">Order #{order.id}</p>
-                      <h3 className="kd-item-name">{order.customerName || "Customer"}</h3>
-                      {order.items && <p className="kd-item-description">Items: {order.items.length} product(s)</p>}
-                      <p className="kd-item-price">R{Number(order.total || 0).toFixed(2)}</p>
-                      <p className="kd-item-category" style={{ marginTop: "8px" }}>Status: {order.status || "pending"}</p>
-                      {order.createdAt && <p className="kd-item-description">{new Date(order.createdAt).toLocaleString()}</p>}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
+        {/* ORDERS PAGE — now uses OrderManagement */}
+        {activeNav === "orders" && <OrderManagement />}
 
+        {/* OTHER PAGES */}
         {activeNav !== "menu" && activeNav !== "orders" && (
           <section aria-label={`${activeNav} placeholder`}>
             <p style={{ color: "#475569", fontSize: "14px" }}>
