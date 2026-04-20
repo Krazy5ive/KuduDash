@@ -1,9 +1,18 @@
-// controllers/orderController.js
 const Order = require("../models/Order");
 
+// Vendor can set these — "paid" is set exclusively by the payment flow
+const VALID_STATUSES = [
+  "received",
+  "preparing",
+  "ready",
+  "collected",
+  "cancelled",
+];
+
+// ── Student: get own orders ──────────────────────────────────────────
 const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ student: req.query.student })
+    const orders = await Order.find({ student: req.user._id })
       .populate("vendor", "businessName location")
       .sort({ createdAt: -1 });
     res.json(orders);
@@ -12,6 +21,24 @@ const getOrders = async (req, res) => {
   }
 };
 
+// ── Vendor: get orders for their store ──────────────────────────────
+const getVendorOrders = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const filter = { vendor: req.vendor._id };
+    if (status) filter.status = status;
+
+    const orders = await Order.find(filter)
+      .populate("student", "firstName lastName email studentNumber")
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ── Shared: get single order by id ──────────────────────────────────
 const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -24,23 +51,62 @@ const getOrderById = async (req, res) => {
   }
 };
 
+// ── Student: create order ────────────────────────────────────────────
 const createOrder = async (req, res) => {
   try {
-    const order = new Order(req.body);
+    const { vendorId, items, totalAmount } = req.body;
+    if (!vendorId || !items?.length || !totalAmount) {
+      return res.status(400).json({ message: "Missing required order fields" });
+    }
+
+    const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+    const order = new Order({
+      student:     req.user._id,
+      vendor:      vendorId,
+      items:       items.map((i) => ({
+        menuItem:  i.menuItem,
+        name:      i.name,
+        unitPrice: i.price,
+        quantity:  i.quantity,
+        subtotal:  i.price * i.quantity,
+        specialNote: i.specialNote,
+      })),
+      subtotal,
+      totalAmount: subtotal,
+      status:      "pending",
+    });
+
     await order.save();
-    res.status(201).json(order);
+    res.status(201).json({ order });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
 
+// ── Vendor: advance/update order status ─────────────────────────────
 const updateOrderStatus = async (req, res) => {
   try {
+    const { status, estimatedReadyAt } = req.body;
+
+    if (!VALID_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` });
+    }
+
+    const update = { status };
+    if (estimatedReadyAt) update.estimatedReadyAt = new Date(estimatedReadyAt);
+
+    // Auto-set collectionCode when order becomes ready
+    if (status === "ready") {
+      update.collectionCode = Math.floor(1000 + Math.random() * 9000).toString();
+    }
+
     const order = await Order.findByIdAndUpdate(
       req.params.id,
-      { status: req.body.status },
+      update,
       { new: true }
-    );
+    ).populate("student", "firstName lastName email");
+
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);
   } catch (err) {
@@ -48,4 +114,4 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getOrderById, createOrder, updateOrderStatus };
+module.exports = { getOrders, getVendorOrders, getOrderById, createOrder, updateOrderStatus };

@@ -21,6 +21,12 @@ router.post("/sync", async (req, res) => {
     const role = student ? "student" : vendor ? "vendor" : admin ? "admin" : null;
 
     if (existingUser) {
+      // Backfill authProviderId if matched by email but sub is missing/different
+      if (existingUser.authProviderId !== sub) {
+        const Model = student ? Student : vendor ? Vendor : Admin;
+        await Model.findByIdAndUpdate(existingUser._id, { authProviderId: sub });
+      }
+
       return res.json({
         isNewUser: false,
         role,
