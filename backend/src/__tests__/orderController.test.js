@@ -1,10 +1,8 @@
 const { getOrders, getOrderById, createOrder, updateOrderStatus } = require('../controllers/orderController');
 
-// Mock the Order model
 jest.mock('../models/Order');
 const Order = require('../models/Order');
 
-// Helper to create mock req/res
 const mockRes = () => {
   const res = {};
   res.json = jest.fn().mockReturnValue(res);
@@ -24,7 +22,8 @@ describe('getOrders', () => {
       }),
     });
 
-    const req = { query: { student: 'student123' } };
+    // FIX: controller reads req.user._id, not req.query.student
+    const req = { user: { _id: 'student123' } };
     const res = mockRes();
 
     await getOrders(req, res);
@@ -40,7 +39,8 @@ describe('getOrders', () => {
       }),
     });
 
-    const req = { query: { student: 'student123' } };
+    // FIX: controller reads req.user._id
+    const req = { user: { _id: 'student123' } };
     const res = mockRes();
 
     await getOrders(req, res);
@@ -107,24 +107,45 @@ describe('getOrderById', () => {
 
 describe('createOrder', () => {
   it('should create and return a new order', async () => {
-    const fakeOrder = { _id: '1', status: 'pending', save: jest.fn().mockResolvedValue(true) };
+    const fakeOrder = {
+      _id: '1',
+      status: 'pending',
+      save: jest.fn().mockResolvedValue(true),
+    };
     Order.mockImplementation(() => fakeOrder);
 
-    const req = { body: { student: 'student123', vendor: 'vendor123' } };
+    // FIX: provide required fields (vendorId, items, totalAmount) and req.user._id
+    const req = {
+      user: { _id: 'student123' },
+      body: {
+        vendorId: 'vendor123',
+        items: [{ menuItem: 'item1', name: 'Burger', price: 50, quantity: 1 }],
+        totalAmount: 50,
+      },
+    };
     const res = mockRes();
 
     await createOrder(req, res);
 
     expect(fakeOrder.save).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
-    expect(res.json).toHaveBeenCalledWith(fakeOrder);
+    // FIX: controller returns { order } not the bare order object
+    expect(res.json).toHaveBeenCalledWith({ order: fakeOrder });
   });
 
   it('should return 400 on error', async () => {
     const fakeOrder = { save: jest.fn().mockRejectedValue(new Error('Validation error')) };
     Order.mockImplementation(() => fakeOrder);
 
-    const req = { body: {} };
+    // FIX: pass valid fields so it gets past the early validation check
+    const req = {
+      user: { _id: 'student123' },
+      body: {
+        vendorId: 'vendor123',
+        items: [{ menuItem: 'item1', name: 'Burger', price: 50, quantity: 1 }],
+        totalAmount: 50,
+      },
+    };
     const res = mockRes();
 
     await createOrder(req, res);
@@ -138,22 +159,33 @@ describe('createOrder', () => {
 
 describe('updateOrderStatus', () => {
   it('should update and return the order', async () => {
-    const fakeOrder = { _id: '1', status: 'completed' };
-    Order.findByIdAndUpdate.mockResolvedValue(fakeOrder);
+    const fakeOrder = { _id: '1', status: 'collected' };
 
-    const req = { params: { id: '1' }, body: { status: 'completed' } };
+    Order.findByIdAndUpdate.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(fakeOrder),
+    });
+
+    // FIX: 'completed' is not a valid status — use 'collected' from VALID_STATUSES
+    const req = { params: { id: '1' }, body: { status: 'collected' } };
     const res = mockRes();
 
     await updateOrderStatus(req, res);
 
-    expect(Order.findByIdAndUpdate).toHaveBeenCalledWith('1', { status: 'completed' }, { new: true });
+    expect(Order.findByIdAndUpdate).toHaveBeenCalledWith(
+      '1',
+      { status: 'collected' },
+      { new: true }
+    );
     expect(res.json).toHaveBeenCalledWith(fakeOrder);
   });
 
   it('should return 404 if order not found', async () => {
-    Order.findByIdAndUpdate.mockResolvedValue(null);
+    Order.findByIdAndUpdate.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(null),
+    });
 
-    const req = { params: { id: 'nonexistent' }, body: { status: 'completed' } };
+    // FIX: use a valid status so it reaches findByIdAndUpdate
+    const req = { params: { id: 'nonexistent' }, body: { status: 'collected' } };
     const res = mockRes();
 
     await updateOrderStatus(req, res);
@@ -163,9 +195,12 @@ describe('updateOrderStatus', () => {
   });
 
   it('should return 500 on error', async () => {
-    Order.findByIdAndUpdate.mockRejectedValue(new Error('DB error'));
+    Order.findByIdAndUpdate.mockReturnValue({
+      populate: jest.fn().mockRejectedValue(new Error('DB error')),
+    });
 
-    const req = { params: { id: '1' }, body: { status: 'completed' } };
+    // FIX: use a valid status so it reaches findByIdAndUpdate
+    const req = { params: { id: '1' }, body: { status: 'collected' } };
     const res = mockRes();
 
     await updateOrderStatus(req, res);
