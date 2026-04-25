@@ -7,13 +7,19 @@ const require = createRequire(import.meta.url)
 const { createProxyMiddleware } = require('http-proxy-middleware')
 
 const app = express()
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 8080
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 app.use('/api', createProxyMiddleware({
     target: process.env.BACKEND_URL || 'http://localhost:5000',
     changeOrigin: true,
+    on: {
+        error: (err, req, res) => {
+            console.error('Proxy error:', err.message)
+            res.status(502).json({ error: 'Backend unavailable' })
+        }
+    }
 }))
 
 app.use(express.static(path.join(__dirname, 'build')))
