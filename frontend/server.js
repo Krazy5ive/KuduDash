@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename)
 app.use('/api', createProxyMiddleware({
     target: process.env.BACKEND_URL || 'http://localhost:5000',
     changeOrigin: true,
+    pathRewrite: { '^/api': '/api' },
     on: {
         error: (err, req, res) => {
             console.error('Proxy error:', err.message)
