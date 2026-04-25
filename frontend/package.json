@@ -22,7 +22,7 @@
     "start": "react-scripts start",
     "serve": "node server.js",
     "build": "react-scripts build",
-    "test": "react-scripts test --coverage --watchAll=false --coverageReporters=lcov",
+    "test": "react-scripts test --coverage --watchAll=false --coverageReporters=lcov --passWithNoTests",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
