@@ -1,13 +1,15 @@
+//app.js
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+
 const menuItemRoutes = require("./src/routes/menuItemRoutes");
 const orderRoutes    = require("./src/routes/orderRoutes");
 const studentRoutes  = require("./src/routes/studentRoutes");
 const vendorRoutes   = require("./src/routes/vendorRoutes");
 const adminRoutes    = require("./src/routes/adminRoutes");
 const authRoutes     = require("./src/routes/auth.routes");
-const cartRoutes     = require("./src/routes/cartRoutes");
+const paymentRoutes = require("./src/routes/paymentRoutes");
 
 const app = express();
 
@@ -26,18 +28,16 @@ app.use(cors({
     }
   }
 }));
+
 app.use(express.json());
 
-// ── Health check ─────────────────────────────────
-app.get("/", (req, res) => res.status(200).json({ status: "ok" }));
-
 // ── Routes SECOND ────────────────────────────────
-app.use("/api/auth",       authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/menu-items", menuItemRoutes);
-app.use("/api/orders",     orderRoutes);
-app.use("/api/students",   studentRoutes);
-app.use("/api/vendors",    vendorRoutes);
-app.use("/api/admin",      adminRoutes);
-app.use("/api/cart",       cartRoutes);
-
+app.use("/api/orders", orderRoutes);
+app.use("/api/students", studentRoutes);
+app.use("/api/vendors", vendorRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/payments", paymentRoutes);
 module.exports = app;
+console.log("menuItemRoutes loaded");
