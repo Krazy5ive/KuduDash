@@ -11,10 +11,12 @@ const PORT = process.env.PORT || 8080
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-app.use('/api', createProxyMiddleware({
+app.use('/', createProxyMiddleware({
     target: process.env.BACKEND_URL || 'http://localhost:5000',
     changeOrigin: true,
-    pathRewrite: { '^/api': '/api' },
+    filter: (pathname) => pathname.startsWith('/api'),
+    proxyTimeout: 30000,
+    timeout: 30000,
     on: {
         error: (err, req, res) => {
             console.error('Proxy error:', err.message)
