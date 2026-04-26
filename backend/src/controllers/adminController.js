@@ -1,3 +1,4 @@
+// controllers/adminController.js
 const Admin = require("../models/Admin");
 
 const getAllAdmins = async (req, res) => {

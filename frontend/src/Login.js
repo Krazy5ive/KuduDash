@@ -1,3 +1,4 @@
+// Login.js
 import React from "react";
 import "./Login.css";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -10,7 +11,7 @@ const Login = () => {
     loginWithRedirect({
       authorizationParams: {
         connection: "google-oauth2",
-        redirect_uri: `${window.location.origin}/vibe`,
+        redirect_uri: `${window.location.origin}/callback`,
       },
     });
   };

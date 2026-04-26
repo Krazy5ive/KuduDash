@@ -1,3 +1,4 @@
+// middleware/auth.js
 const { auth } = require("express-oauth2-jwt-bearer");
 const Student = require("../models/Student");
 const Vendor  = require("../models/Vendor");

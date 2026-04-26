@@ -1,3 +1,4 @@
+// controllers/vendorController.js
 const Vendor = require("../models/Vendor");
 const multer = require("multer");
 
