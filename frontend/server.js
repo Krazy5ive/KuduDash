@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname, 'build')))
 app.use('/api', createProxyMiddleware({
     target: process.env.BACKEND_URL || 'http://localhost:5000',
     changeOrigin: true,
-    pathRewrite: { '^/api': '/api' },
+    pathRewrite: { '^/': '/api/' },
     proxyTimeout: 30000,
     timeout: 30000,
     on: {
