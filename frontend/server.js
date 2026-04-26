@@ -1,3 +1,4 @@
+// server.js
 import express from 'express'
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
@@ -16,7 +17,6 @@ app.use(express.static(path.join(__dirname, 'build')))
 app.use('/api', createProxyMiddleware({
     target: process.env.BACKEND_URL || 'http://localhost:5000',
     changeOrigin: true,
-    pathRewrite: (path) => '/api' + path,
     proxyTimeout: 30000,
     timeout: 30000,
     on: {
