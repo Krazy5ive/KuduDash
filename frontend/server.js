@@ -11,10 +11,12 @@ const PORT = process.env.PORT || 8080
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-app.use('/', createProxyMiddleware({
+app.use(express.static(path.join(__dirname, 'build')))
+
+app.use('/api', createProxyMiddleware({
     target: process.env.BACKEND_URL || 'http://localhost:5000',
     changeOrigin: true,
-    filter: (pathname) => pathname.startsWith('/api'),
+    pathRewrite: (path) => '/api' + path,
     proxyTimeout: 30000,
     timeout: 30000,
     on: {
@@ -24,8 +26,6 @@ app.use('/', createProxyMiddleware({
         }
     }
 }))
-
-app.use(express.static(path.join(__dirname, 'build')))
 
 app.get('/{*splat}', (req, res) => {
     res.sendFile(path.join(__dirname, 'build', 'index.html'))
