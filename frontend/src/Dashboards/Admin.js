@@ -324,6 +324,16 @@ const OverviewPage = () => {
     ready:       filteredByDate.filter((o) => o.status === "ready").length,
     cancelled: filteredByDate.filter((o) => o.status === "cancelled").length,
   }), [filteredByDate]);
+
+  const todaysCounts = useMemo(() => {
+  const midnight = new Date();
+  midnight.setHours(0, 0, 0, 0);
+  const todays = orders.filter((o) => new Date(o.createdAt) >= midnight);
+  return {
+    total:       todays.length,
+    totalAmount: todays.reduce((sum, o) => sum + Number(o.totalAmount || o.total || 0), 0),
+  };
+}, [orders]);
   
   const filtered = useMemo(() =>
     filterStatus === "all" ? filteredByDate  : filteredByDate.filter((o) => o.status === filterStatus),
@@ -371,16 +381,26 @@ const OverviewPage = () => {
           </button>
         ))}
       </section>
-      
+
       {/* Stat cards */}
       <section className="kd-stats-row" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
         <article className="kd-stat-card">
           <p className="kd-stat-label">Total orders</p>
           <p className="kd-stat-value">{counts.total}</p>
+          {todaysCounts.total > 0 && (
+            <p className="kd-stat-trend">
+              ↑ {todaysCounts.total} today
+            </p>
+          )}
         </article>
         <article className="kd-stat-card">
           <p className="kd-stat-label">Total amount</p>
           <p className="kd-stat-value green">{counts.totalAmount.toFixed(2)}</p>
+          {todaysCounts.totalAmount > 0 && (
+            <p className="kd-stat-trend">
+              ↑ R{todaysCounts.totalAmount.toFixed(2)} today
+            </p>
+          )}
         </article>
       </section>
 
