@@ -239,9 +239,12 @@ const OverviewPage = () => {
   const [students, setStudents] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+
+  const PAGE_SIZE = 10;
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -288,9 +291,14 @@ const OverviewPage = () => {
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
-      await Promise.all([fetchOrders(), fetchStudents(), fetchVendors()]);
+      await Promise.all([
+        fetchOrders(), 
+        fetchStudents(), 
+        fetchVendors()
+      ]);
       setLoading(false);
     };
+
     loadAllData();
   }, [fetchOrders, fetchStudents, fetchVendors]);
 
@@ -305,6 +313,14 @@ const OverviewPage = () => {
     filterStatus === "all" ? orders : orders.filter((o) => o.status === filterStatus),
     [orders, filterStatus]
   );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleFilterChange = (f) => {
+    setFilterStatus(f);
+    setPage(1);
+  };
 
   const barPct = (n) => counts.total ? Math.round((n / counts.total) * 100) : 0;
 
@@ -341,12 +357,18 @@ const OverviewPage = () => {
         </article>
       </section>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
-        <button onClick={fetchOrders} className="kd-btn ghost" style={{ fontSize: "12px" }}>
+      {/* Refresh button (optional - shows last updated time) */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+        <button 
+          onClick={fetchOrders} 
+          className="kd-btn ghost"
+          style={{ fontSize: '12px' }}
+        >
           ↻ Refresh {lastUpdated && `(Updated: ${lastUpdated.toLocaleTimeString()})`}
         </button>
       </div>
 
+      {/* Two-column layout */}
       <section className="kd-overview-row">
         {/* Orders table */}
         <section>
@@ -354,10 +376,10 @@ const OverviewPage = () => {
             <ul className="kd-filter-list">
               {STATUS_FILTERS.map((f) => (
                 <li key={f}>
-                  <button
-                    type="button"
-                    className={`kd-filter-pill ${filterStatus === f ? "active" : ""}`}
-                    onClick={() => setFilterStatus(f)}
+                  <button 
+                    type="button" 
+                    className={`kd-filter-pill ${filterStatus === f ? "active" : ""}`} 
+                    onClick={() => handleFilterChange(f)}
                   >
                     {f.charAt(0).toUpperCase() + f.slice(1)}
                   </button>
@@ -384,7 +406,7 @@ const OverviewPage = () => {
                 {!loading && filtered.length === 0 && (
                   <tr><td colSpan={6}><p className="kd-empty-state">No orders found.</p></td></tr>
                 )}
-                {filtered.map((order) => (
+                {paginated.map((order) => (
                   <tr key={order._id}>
                     <td>#{order._id.slice(-6).toUpperCase()}</td>
                     <td>{order.student ? `${order.student.firstName} ${order.student.lastName}` : "—"}</td>
@@ -397,15 +419,34 @@ const OverviewPage = () => {
               </tbody>
             </table>
           </section>
+          <section style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "1rem", justifyContent: "flex-end" }}>
+            <button
+              className="kd-btn ghost"
+              onClick={() => setPage((p) => p - 1)}
+              disabled={page === 1}
+            >
+              ← Prev
+            </button>
+            <span style={{ fontSize: "13px", color: "var(--color-text-secondary)" }}>
+              Page {page} of {totalPages}
+            </span>
+            <button
+              className="kd-btn ghost"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page === totalPages}
+            >
+              Next →
+            </button>
+          </section>
         </section>
 
-        {/* Sidebar */}
+        {/* Status breakdown sidebar */}
         <aside className="kd-overview-sidebar">
           <p className="kd-sidebar-title">Orders by status</p>
           {[
             { label: "Completed", key: "completed", color: "var(--kd-green)" },
-            { label: "Pending",   key: "pending",   color: "var(--kd-amber)" },
-            { label: "Cancelled", key: "cancelled", color: "var(--kd-red)"   },
+            { label: "Pending", key: "pending", color: "var(--kd-amber)" },
+            { label: "Cancelled", key: "cancelled", color: "var(--kd-red)" },
           ].map(({ label, key, color }) => (
             <section className="kd-bar-row" key={key}>
               <section className="kd-bar-label">
@@ -413,7 +454,10 @@ const OverviewPage = () => {
                 <span>{counts[key]}</span>
               </section>
               <section className="kd-bar-track">
-                <span className="kd-bar-fill" style={{ width: `${barPct(counts[key])}%`, background: color }} />
+                <span 
+                  className="kd-bar-fill" 
+                  style={{ width: `${barPct(counts[key])}%`, background: color }} 
+                />
               </section>
             </section>
           ))}
