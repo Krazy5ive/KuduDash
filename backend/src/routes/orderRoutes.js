@@ -7,9 +7,13 @@ const {
   getOrderById,
   createOrder,
   updateOrderStatus,
+  getAllOrders,
 } = require("../controllers/orderController");
 
 const { verifyToken, attachStudent, attachVendor } = require("../middleware/auth");
+
+// ── Admin routes ───────────────────────────────────────────────────
+router.get("/admin/all", getAllOrders);
 
 // ── Student routes ───────────────────────────────────────────────────
 router.get(   "/",            verifyToken, attachStudent, getOrders);
