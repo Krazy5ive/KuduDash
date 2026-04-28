@@ -114,4 +114,18 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getVendorOrders, getOrderById, createOrder, updateOrderStatus };
+// ── Admin: get all orders ───────────────────────────────────────────
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("student", "firstName lastName")
+      .populate("vendor", "businessName")
+      .sort({ createdAt: -1 });
+
+    res.json(orders); // IMPORTANT: return array
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { getOrders, getVendorOrders, getOrderById, createOrder, updateOrderStatus, getAllOrders };
