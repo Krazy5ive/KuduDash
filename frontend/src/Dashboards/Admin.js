@@ -243,6 +243,7 @@ const OverviewPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [dateRange, setDateRange] = useState("all");
 
   const PAGE_SIZE = 10;
 
@@ -302,21 +303,31 @@ const OverviewPage = () => {
     loadAllData();
   }, [fetchOrders, fetchStudents, fetchVendors]);
 
-  const counts = useMemo(() => ({
-    total: orders.length,
-    totalAmount: orders.reduce((sum, o) => sum + Number(o.totalAmount || o.total || 0), 0),
-    collected: orders.filter((o) => o.status === "collected").length,
-    pending: orders.filter((o) => o.status === "pending").length,
-    received:    orders.filter((o) => o.status === "received").length,
-    paid:        orders.filter((o) => o.status === "paid").length,
-    preparing:   orders.filter((o) => o.status === "preparing").length,
-    ready:       orders.filter((o) => o.status === "ready").length,
-    cancelled: orders.filter((o) => o.status === "cancelled").length,
-  }), [orders]);
+  const filteredByDate = useMemo(() => {
+    if (dateRange === "all") return orders;
+    const now = new Date();
+    const cutoff = new Date();
+    if (dateRange === "today") cutoff.setHours(0, 0, 0, 0);
+    if (dateRange === "week")  cutoff.setDate(now.getDate() - 7);
+    if (dateRange === "month") cutoff.setMonth(now.getMonth() - 1);
+    return orders.filter((o) => new Date(o.createdAt) >= cutoff);
+  }, [orders, dateRange]);
 
+  const counts = useMemo(() => ({
+    total: filteredByDate.length,
+    totalAmount: filteredByDate.reduce((sum, o) => sum + Number(o.totalAmount || o.total || 0), 0),
+    collected: filteredByDate.filter((o) => o.status === "collected").length,
+    pending: filteredByDate.filter((o) => o.status === "pending").length,
+    received:    filteredByDate.filter((o) => o.status === "received").length,
+    paid:        filteredByDate.filter((o) => o.status === "paid").length,
+    preparing:   filteredByDate.filter((o) => o.status === "preparing").length,
+    ready:       filteredByDate.filter((o) => o.status === "ready").length,
+    cancelled: filteredByDate.filter((o) => o.status === "cancelled").length,
+  }), [filteredByDate]);
+  
   const filtered = useMemo(() =>
-    filterStatus === "all" ? orders : orders.filter((o) => o.status === filterStatus),
-    [orders, filterStatus]
+    filterStatus === "all" ? filteredByDate  : filteredByDate.filter((o) => o.status === filterStatus),
+    [filteredByDate , filterStatus]
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -342,6 +353,25 @@ const OverviewPage = () => {
 
   return (
     <section aria-label="Overview">
+      {/* Date range filter */}
+      <section style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+        {[
+          { label: "Today",      value: "today" },
+          { label: "This week",  value: "week"  },
+          { label: "This month", value: "month" },
+          { label: "All time",   value: "all"   },
+        ].map(({ label, value }) => (
+          <button
+            key={value}
+            type="button"
+            className={`kd-filter-pill ${dateRange === value ? "active" : ""}`}
+            onClick={() => { setDateRange(value); setPage(1); }}
+          >
+            {label}
+          </button>
+        ))}
+      </section>
+      
       {/* Stat cards */}
       <section className="kd-stats-row" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
         <article className="kd-stat-card">
