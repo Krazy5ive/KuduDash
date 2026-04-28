@@ -645,3 +645,48 @@ Admincss
   color: #64748b;
   font-family: 'Baloo 2', sans-serif;
 }
+
+/* ──────────────────────────────────────────
+   Overview Page
+────────────────────────────────────────── */
+/* Overview two-column layout */
+.kd-overview-row {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 16px;
+  margin-top: 1.5rem;
+  align-items: start;
+}
+
+.kd-overview-sidebar {
+  background: var(--kd-surface);
+  border: 0.5px solid var(--kd-border);
+  border-radius: var(--kd-radius-lg);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kd-sidebar-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--kd-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kd-bar-row { display: flex; flex-direction: column; gap: 5px; }
+.kd-bar-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--kd-text); }
+.kd-bar-track { height: 8px; background: var(--kd-bg); border-radius: 4px; overflow: hidden; }
+.kd-bar-fill  { display: block; height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+
+.kd-overview-divider { border-top: 0.5px solid var(--kd-border); margin: 4px 0; }
+
+.kd-summary-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.kd-summary-list li { display: flex; justify-content: space-between; font-size: 13px; color: var(--kd-text-muted); }
+.kd-summary-list li strong { color: var(--kd-text); font-weight: 500; }
+
+/* Amber and red stat values (add alongside existing .green) */
+.kd-stat-value.amber { color: var(--kd-amber, #854F0B); }
+.kd-stat-value.red   { color: var(--kd-red,   #A32D2D); }
