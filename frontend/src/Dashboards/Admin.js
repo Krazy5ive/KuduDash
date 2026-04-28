@@ -305,8 +305,12 @@ const OverviewPage = () => {
   const counts = useMemo(() => ({
     total: orders.length,
     totalAmount: orders.reduce((sum, o) => sum + Number(o.totalAmount || o.total || 0), 0),
-    completed: orders.filter((o) => o.status === "collected").length,
+    collected: orders.filter((o) => o.status === "collected").length,
     pending: orders.filter((o) => o.status === "pending").length,
+    received:    orders.filter((o) => o.status === "received").length,
+    paid:        orders.filter((o) => o.status === "paid").length,
+    preparing:   orders.filter((o) => o.status === "preparing").length,
+    ready:       orders.filter((o) => o.status === "ready").length,
     cancelled: orders.filter((o) => o.status === "cancelled").length,
   }), [orders]);
 
@@ -325,7 +329,7 @@ const OverviewPage = () => {
 
   const barPct = (n) => counts.total ? Math.round((n / counts.total) * 100) : 0;
 
-  const STATUS_FILTERS = ["all", "pending", "collected", "cancelled"];
+  const STATUS_FILTERS = ["all", "pending", "received", "paid", "preparing", "ready", "collected", "cancelled"];
 
   if (error) {
     return (
@@ -437,8 +441,12 @@ const OverviewPage = () => {
         <aside className="kd-overview-sidebar">
           <p className="kd-sidebar-title">Orders by status</p>
           {[
-            { label: "Completed", key: "completed", color: "var(--kd-green)" },
+            { label: "Collected", key: "collected", color: "var(--kd-green)" },
             { label: "Pending", key: "pending", color: "var(--kd-amber)" },
+            { label: "Received", key: "received", color: "var(--kd-amber)" },
+            { label: "Paid", key: "paid", color: "var(--kd-amber)" },
+            { label: "Preparing", key: "preparing", color: "var(--kd-amber)" },
+            { label: "Ready", key: "ready", color: "var(--kd-green)" },
             { label: "Cancelled", key: "cancelled", color: "var(--kd-red)" },
           ].map(({ label, key, color }) => (
             <section className="kd-bar-row" key={key}>

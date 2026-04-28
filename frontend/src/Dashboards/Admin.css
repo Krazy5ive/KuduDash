@@ -649,6 +649,12 @@ Admincss
 /* ──────────────────────────────────────────
    Overview Page
 ────────────────────────────────────────── */
+:root {
+  --kd-green: #22c55e;
+  --kd-amber: #f59e0b;
+  --kd-red:   #ef4444;
+}
+
 /* Overview two-column layout */
 .kd-overview-row {
   display: grid;
