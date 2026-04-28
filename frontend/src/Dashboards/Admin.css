@@ -653,6 +653,13 @@ Admincss
   --kd-green: #22c55e;
   --kd-amber: #f59e0b;
   --kd-red:   #ef4444;
+
+  --kd-surface:    rgba(255, 255, 255, 0.04);
+  --kd-border:     rgba(110, 231, 183, 0.1);
+  --kd-bg:         rgba(255, 255, 255, 0.06);
+  --kd-text:       #e2e8f0;
+  --kd-text-muted: #64748b;
+  --kd-radius-lg:  14px;
 }
 
 /* Overview two-column layout */
