@@ -11,6 +11,7 @@ const orderRoutes    = require("./src/routes/orderRoutes");
 const authRoutes     = require("./src/routes/auth.routes");
 const cartRoutes    = require("./src/routes/cartRoutes");
 const paymentRoutes = require("./src/routes/paymentRoutes");
+const reviewRoutes = require('./src/routes/reviewRoutes');
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api/orders",   orderRoutes);
 app.use("/api/auth",     authRoutes);
 app.use("/api/cart",     cartRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)

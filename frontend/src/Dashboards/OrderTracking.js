@@ -1,8 +1,9 @@
 // OrderTracking.js
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import "./OrderTracking.css";
+import ReviewForm from "../ReviewForm";
 
 const STATUS_STEPS = [
   { key: "pending",    label: "Placed",     description: "Order received, awaiting vendor confirmation" },
@@ -15,7 +16,7 @@ const STATUS_STEPS = [
 
 const CANCELLED = { key: "cancelled", label: "Cancelled", description: "Order was cancelled" };
 
-const POLL_INTERVAL = 5000; // 5 seconds
+const POLL_INTERVAL = 5000;
 
 const statusIndex = (status) => STATUS_STEPS.findIndex((s) => s.key === status);
 
@@ -38,17 +39,12 @@ const formatDate = (dateStr) => {
 const OrderDetail = ({ order, onBack }) => {
   const navigate    = useNavigate();
   const isCancelled = order.status === "cancelled";
-  const steps = isCancelled ? [...STATUS_STEPS] : STATUS_STEPS;
-  const currentIdx = isCancelled ? -1 : statusIndex(order.status);
-
-  const handleBack = () => {
-    console.log("Back button clicked"); // For debugging
-    onBack();
-  };
+  const steps       = STATUS_STEPS;
+  const currentIdx  = isCancelled ? -1 : statusIndex(order.status);
 
   return (
     <article className="ot-detail">
-      <button className="ot-back-btn" onClick={handleBack}>← Back to orders</button>
+      <button className="ot-back-btn" onClick={onBack}>← Back to orders</button>
 
       <header className="ot-detail-header">
         <section>
@@ -72,7 +68,7 @@ const OrderDetail = ({ order, onBack }) => {
       ) : (
         <section className="ot-stepper">
           {steps.map((step, idx) => {
-            const done = idx < currentIdx;
+            const done   = idx < currentIdx;
             const active = idx === currentIdx;
             return (
               <React.Fragment key={step.key}>
@@ -81,7 +77,7 @@ const OrderDetail = ({ order, onBack }) => {
                     <p className="ot-step-label">{step.label}</p>
                     {active && <p className="ot-step-desc">{step.description}</p>}
                   </section>
-                  {done && <span className="ot-step-check">✓</span>}
+                  {done   && <span className="ot-step-check">✓</span>}
                   {active && <span className="ot-step-pulse" />}
                 </section>
                 {idx < steps.length - 1 && (
@@ -93,17 +89,19 @@ const OrderDetail = ({ order, onBack }) => {
         </section>
       )}
 
-      {/* PAY NOW — shown when vendor has confirmed */}
+      {/* PAY NOW */}
       {order.status === "received" && (
         <section className="ot-pay-now">
-          <p className="ot-pay-now-msg">Your order has been confirmed by the vendor. Complete your payment to proceed.</p>
+          <p className="ot-pay-now-msg">
+            Your order has been confirmed by the vendor. Complete your payment to proceed.
+          </p>
           <button className="ot-pay-now-btn" onClick={() => navigate(`/payment/${order._id}`)}>
             Pay R{Number(order.totalAmount).toFixed(2)} →
           </button>
         </section>
       )}
 
-      {/* COLLECTION CODE — shown when ready */}
+      {/* COLLECTION CODE */}
       {order.status === "ready" && order.collectionCode && (
         <section className="ot-collection-code">
           <p className="ot-code-label">Your collection code</p>
@@ -141,6 +139,9 @@ const OrderDetail = ({ order, onBack }) => {
           <span>R{Number(order.totalAmount).toFixed(2)}</span>
         </footer>
       </section>
+
+      {/* REVIEW FORM */}
+      <ReviewForm order={order} />
     </article>
   );
 };
@@ -149,7 +150,7 @@ const OrderDetail = ({ order, onBack }) => {
 const OrderCard = ({ order, onClick }) => {
   const navigate    = useNavigate();
   const isCancelled = order.status === "cancelled";
-  const isActive = !["collected", "cancelled"].includes(order.status);
+  const isActive    = !["collected", "cancelled"].includes(order.status);
   const currentStep = STATUS_STEPS.find((s) => s.key === order.status);
 
   return (
@@ -183,7 +184,6 @@ const OrderCard = ({ order, onClick }) => {
         </p>
       </section>
 
-      {/* Pay Now CTA on the card */}
       {order.status === "received" && (
         <button
           className="ot-card-pay-btn"
@@ -193,7 +193,6 @@ const OrderCard = ({ order, onClick }) => {
         </button>
       )}
 
-      {/* Mini progress bar for active orders */}
       {isActive && !isCancelled && (
         <section className="ot-card-progress">
           <span
@@ -209,12 +208,16 @@ const OrderCard = ({ order, onClick }) => {
 // ── Main OrderTracking component ─────────────────────────────────────
 const OrderTracking = ({ successOrders }) => {
   const { getAccessTokenSilently } = useAuth0();
-  const [orders, setOrders]               = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [error, setError]                 = useState(null);
+  const [orders,        setOrders]        = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [activeTab, setActiveTab]         = useState("active");
-  const [lastUpdated, setLastUpdated]     = useState(null);
+  const [activeTab,     setActiveTab]     = useState("active");
+  const [lastUpdated,   setLastUpdated]   = useState(null);
+
+  // ── ref so fetchOrders can read selectedOrder without it being a dep ──
+  const selectedOrderRef = useRef(selectedOrder);
+  useEffect(() => { selectedOrderRef.current = selectedOrder; }, [selectedOrder]);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -230,9 +233,8 @@ const OrderTracking = ({ successOrders }) => {
       setLastUpdated(new Date());
       setError(null);
 
-      // Keep selected order fresh
-      if (selectedOrder) {
-        const refreshed = data.find((o) => o._id === selectedOrder._id);
+      if (selectedOrderRef.current) {
+        const refreshed = data.find((o) => o._id === selectedOrderRef.current._id);
         if (refreshed) setSelectedOrder(refreshed);
       }
     } catch (err) {
@@ -240,36 +242,30 @@ const OrderTracking = ({ successOrders }) => {
     } finally {
       setLoading(false);
     }
-  }, [getAccessTokenSilently, selectedOrder]);
+  }, [getAccessTokenSilently]); // selectedOrder removed from deps
 
-  // Initial fetch + polling
   useEffect(() => {
     fetchOrders();
     const interval = setInterval(fetchOrders, POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
-  const handleBackToList = () => {
-    console.log("Going back to order list"); // For debugging
-    setSelectedOrder(null);
-  };
-
-  const activeOrders = orders.filter((o) => !["collected", "cancelled"].includes(o.status));
-  const pastOrders   = orders.filter((o) => ["collected", "cancelled"].includes(o.status));
+  const activeOrders  = orders.filter((o) => !["collected", "cancelled"].includes(o.status));
+  const pastOrders    = orders.filter((o) =>  ["collected", "cancelled"].includes(o.status));
   const displayOrders = activeTab === "active" ? activeOrders : pastOrders;
 
   if (selectedOrder) {
     return (
       <OrderDetail
         order={selectedOrder}
-        onBack={handleBackToList}
+        onBack={() => setSelectedOrder(null)}
       />
     );
   }
 
   return (
     <section className="ot-root">
-      {/* Success banner from checkout */}
+
       {successOrders?.length > 0 && (
         <aside className="ot-success-banner">
           <section>
@@ -281,14 +277,10 @@ const OrderTracking = ({ successOrders }) => {
         </aside>
       )}
 
-      {/* Tabs */}
       <nav className="ot-tabs">
         <button
           className={`ot-tab ${activeTab === "active" ? "active" : ""}`}
-          onClick={() => {
-            setActiveTab("active");
-            setSelectedOrder(null);
-          }}
+          onClick={() => { setActiveTab("active"); setSelectedOrder(null); }}
         >
           Active
           {activeOrders.length > 0 && (
@@ -297,22 +289,16 @@ const OrderTracking = ({ successOrders }) => {
         </button>
         <button
           className={`ot-tab ${activeTab === "past" ? "active" : ""}`}
-          onClick={() => {
-            setActiveTab("past");
-            setSelectedOrder(null);
-          }}
+          onClick={() => { setActiveTab("past"); setSelectedOrder(null); }}
         >
           Past
         </button>
 
         {lastUpdated && (
-          <p className="ot-last-updated">
-            Updated {formatTime(lastUpdated)}
-          </p>
+          <p className="ot-last-updated">Updated {formatTime(lastUpdated)}</p>
         )}
       </nav>
 
-      {/* Order list */}
       {loading ? (
         <section className="ot-loading">
           <span className="ot-spinner" />

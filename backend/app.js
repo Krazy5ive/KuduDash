@@ -10,6 +10,7 @@ const vendorRoutes   = require("./src/routes/vendorRoutes");
 const adminRoutes    = require("./src/routes/adminRoutes");
 const authRoutes     = require("./src/routes/auth.routes");
 const paymentRoutes = require("./src/routes/paymentRoutes");
+const reviewRoutes = require('./src/routes/reviewRoutes');
 
 const app = express();
 
@@ -39,5 +40,6 @@ app.use("/api/students", studentRoutes);
 app.use("/api/vendors", vendorRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/reviews", reviewRoutes);
 module.exports = app;
 console.log("menuItemRoutes loaded");
