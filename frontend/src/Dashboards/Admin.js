@@ -304,6 +304,7 @@ const OverviewPage = () => {
 
   const counts = useMemo(() => ({
     total: orders.length,
+    totalAmount: orders.reduce((sum, o) => sum + Number(o.totalAmount || o.total || 0), 0),
     completed: orders.filter((o) => o.status === "collected").length,
     pending: orders.filter((o) => o.status === "pending").length,
     cancelled: orders.filter((o) => o.status === "cancelled").length,
@@ -338,22 +339,14 @@ const OverviewPage = () => {
   return (
     <section aria-label="Overview">
       {/* Stat cards */}
-      <section className="kd-stats-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+      <section className="kd-stats-row" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
         <article className="kd-stat-card">
           <p className="kd-stat-label">Total orders</p>
           <p className="kd-stat-value">{counts.total}</p>
         </article>
         <article className="kd-stat-card">
-          <p className="kd-stat-label">Completed</p>
-          <p className="kd-stat-value green">{counts.completed}</p>
-        </article>
-        <article className="kd-stat-card">
-          <p className="kd-stat-label">Pending</p>
-          <p className="kd-stat-value amber">{counts.pending}</p>
-        </article>
-        <article className="kd-stat-card">
-          <p className="kd-stat-label">Cancelled</p>
-          <p className="kd-stat-value red">{counts.cancelled}</p>
+          <p className="kd-stat-label">Total amount</p>
+          <p className="kd-stat-value green">{counts.totalAmount.toFixed(2)}</p>
         </article>
       </section>
 
@@ -512,7 +505,7 @@ const Admin = () => {
   const location = useLocation();
 
   const [expanded, setExpanded]         = useState(false);
-  const [activeNav, setActiveNav]       = useState("students");
+  const [activeNav, setActiveNav]       = useState("overview");
   const [adminProfile, setAdminProfile] = useState(null);
 
   useEffect(() => {
