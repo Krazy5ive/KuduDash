@@ -1,5 +1,5 @@
 //Admin.js
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import "./Admin.css";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useLocation } from "react-router-dom";
@@ -233,6 +233,85 @@ const VendorsPage = () => {
   );
 };
 
+const OverviewPage = () => {
+  const { getAccessTokenSilently } = useAuth0();
+  const [orders, setOrders] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/orders/admin/all");
+      if (!res.ok) throw new Error("Failed to fetch orders");
+      const data = await res.json();
+      setOrders(data);
+      setLastUpdated(new Date());
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchStudents = useCallback(async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/students");
+      if (!res.ok) throw new Error("Failed to fetch students");
+      const data = await res.json();
+      setStudents(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch students:", err);
+    }
+  }, []);
+
+  const fetchVendors = useCallback(async () => {
+    try {
+      const token = await getAccessTokenSilently({
+        authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
+      });
+      const res = await fetch("http://localhost:5000/api/vendors", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch vendors");
+      const data = await res.json();
+      setVendors(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch vendors:", err);
+    }
+  }, [getAccessTokenSilently]);
+
+  useEffect(() => {
+    const loadAllData = async () => {
+      setLoading(true);
+      await Promise.all([fetchOrders(), fetchStudents(), fetchVendors()]);
+      setLoading(false);
+    };
+    loadAllData();
+  }, [fetchOrders, fetchStudents, fetchVendors]);
+
+  if (error) {
+    return (
+      <section className="kd-error-state">
+        <p>Error loading orders: {error}</p>
+        <button onClick={fetchOrders}>Retry</button>
+      </section>
+    );
+  }
+
+  return (
+    <section aria-label="Overview">
+      <p>Data loaded. Orders: {orders.length}</p>
+      {lastUpdated && (
+        <p>Last updated: {lastUpdated.toLocaleTimeString()}</p>
+      )}
+    </section>
+  );
+};
+
 const PlaceholderPage = ({ label }) => (
   <section aria-label={`${label} placeholder`} className="kd-placeholder">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M9 9h6M9 13h4" /></svg>
@@ -302,6 +381,7 @@ const Admin = () => {
     switch (activeNav) {
       case "students": return <StudentsPage />;
       case "vendors":  return <VendorsPage />;
+      case "overview": return <OverviewPage />;
       default:         return <PlaceholderPage label={NAV_ITEMS.find((n) => n.id === activeNav)?.label ?? activeNav} />;
     }
   };
