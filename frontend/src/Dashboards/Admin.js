@@ -238,6 +238,7 @@ const OverviewPage = () => {
   const [orders, setOrders] = useState([]);
   const [students, setStudents] = useState([]);
   const [vendors, setVendors] = useState([]);
+  const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -293,6 +294,22 @@ const OverviewPage = () => {
     loadAllData();
   }, [fetchOrders, fetchStudents, fetchVendors]);
 
+  const counts = useMemo(() => ({
+    total: orders.length,
+    completed: orders.filter((o) => o.status === "collected").length,
+    pending: orders.filter((o) => o.status === "pending").length,
+    cancelled: orders.filter((o) => o.status === "cancelled").length,
+  }), [orders]);
+
+  const filtered = useMemo(() =>
+    filterStatus === "all" ? orders : orders.filter((o) => o.status === filterStatus),
+    [orders, filterStatus]
+  );
+
+  const barPct = (n) => counts.total ? Math.round((n / counts.total) * 100) : 0;
+
+  const STATUS_FILTERS = ["all", "pending", "collected", "cancelled"];
+
   if (error) {
     return (
       <section className="kd-error-state">
@@ -304,10 +321,118 @@ const OverviewPage = () => {
 
   return (
     <section aria-label="Overview">
-      <p>Data loaded. Orders: {orders.length}</p>
-      {lastUpdated && (
-        <p>Last updated: {lastUpdated.toLocaleTimeString()}</p>
-      )}
+      {/* Stat cards */}
+      <section className="kd-stats-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        <article className="kd-stat-card">
+          <p className="kd-stat-label">Total orders</p>
+          <p className="kd-stat-value">{counts.total}</p>
+        </article>
+        <article className="kd-stat-card">
+          <p className="kd-stat-label">Completed</p>
+          <p className="kd-stat-value green">{counts.completed}</p>
+        </article>
+        <article className="kd-stat-card">
+          <p className="kd-stat-label">Pending</p>
+          <p className="kd-stat-value amber">{counts.pending}</p>
+        </article>
+        <article className="kd-stat-card">
+          <p className="kd-stat-label">Cancelled</p>
+          <p className="kd-stat-value red">{counts.cancelled}</p>
+        </article>
+      </section>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
+        <button onClick={fetchOrders} className="kd-btn ghost" style={{ fontSize: "12px" }}>
+          ↻ Refresh {lastUpdated && `(Updated: ${lastUpdated.toLocaleTimeString()})`}
+        </button>
+      </div>
+
+      <section className="kd-overview-row">
+        {/* Orders table */}
+        <section>
+          <form className="kd-search-row" role="search" onSubmit={(e) => e.preventDefault()}>
+            <ul className="kd-filter-list">
+              {STATUS_FILTERS.map((f) => (
+                <li key={f}>
+                  <button
+                    type="button"
+                    className={`kd-filter-pill ${filterStatus === f ? "active" : ""}`}
+                    onClick={() => setFilterStatus(f)}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </form>
+          <section className="kd-table-wrap">
+            <table className="kd-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Student</th>
+                  <th>Vendor</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading && (
+                  <tr><td colSpan={6}><p className="kd-empty-state">Loading orders...</p></td></tr>
+                )}
+                {!loading && filtered.length === 0 && (
+                  <tr><td colSpan={6}><p className="kd-empty-state">No orders found.</p></td></tr>
+                )}
+                {filtered.map((order) => (
+                  <tr key={order._id}>
+                    <td>#{order._id.slice(-6).toUpperCase()}</td>
+                    <td>{order.student ? `${order.student.firstName} ${order.student.lastName}` : "—"}</td>
+                    <td>{order.vendorName ?? order.vendor?.businessName ?? "—"}</td>
+                    <td>R{Number(order.totalAmount || order.total).toFixed(2)}</td>
+                    <td><small className={`kd-badge ${order.status}`}>{order.status}</small></td>
+                    <td>{formatDate(order.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </section>
+
+        {/* Sidebar */}
+        <aside className="kd-overview-sidebar">
+          <p className="kd-sidebar-title">Orders by status</p>
+          {[
+            { label: "Completed", key: "completed", color: "var(--kd-green)" },
+            { label: "Pending",   key: "pending",   color: "var(--kd-amber)" },
+            { label: "Cancelled", key: "cancelled", color: "var(--kd-red)"   },
+          ].map(({ label, key, color }) => (
+            <section className="kd-bar-row" key={key}>
+              <section className="kd-bar-label">
+                <span>{label}</span>
+                <span>{counts[key]}</span>
+              </section>
+              <section className="kd-bar-track">
+                <span className="kd-bar-fill" style={{ width: `${barPct(counts[key])}%`, background: color }} />
+              </section>
+            </section>
+          ))}
+
+          <section className="kd-overview-divider" />
+
+          <p className="kd-sidebar-title">Platform summary</p>
+          <ul className="kd-summary-list">
+            <li>
+              <span>Active students</span>
+              <strong>{students.filter((s) => s.isActive).length}</strong>
+            </li>
+            <li>
+              <span>Active vendors</span>
+              <strong>{vendors.filter((v) => v.status === "active").length}</strong>
+            </li>
+          </ul>
+        </aside>
+      </section>
     </section>
   );
 };
