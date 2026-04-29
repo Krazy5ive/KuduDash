@@ -6,27 +6,44 @@ KuduDash Main/KuduDash/
 │   ├── package.json  
 │   ├── server.js  
 │   └── src/  
-│       ├── controllers/  
+│       └── controllers/  
 │       │   ├── adminController.js  
+│       │   ├── cartController.js
 │       │   ├── menuItemController.js  
-│       │   ├── orderController.js  
+│       │   ├── orderController.js
+│       │   ├── paymentController.js
+│       │   ├── reviewController.js
 │       │   ├── studentController.js  
-│       │   └── vendorController.js  
-│       ├── models/  
+│       │   └── vendorController.js
+│       └── models/  
 │       │   ├── Admin.js  
+│       │   ├── Cart.js 
 │       │   ├── MenuItem.js  
-│       │   ├── Order.js  
+│       │   ├── Order.js 
+│       │   ├── Review.js 
 │       │   ├── Student.js  
 │       │   └── Vendor.js  
 │       └── routes/  
 │       |   ├── adminRoutes.js  
 │       |   ├── auth.routes.js  
+│       │   ├── cartRoutes.js 
 │       |   ├── menuItemRoutes.js  
 │       |   ├── orderRoutes.js  
+│       │   ├── paymentRoutes.js 
+│       │   ├── reviewRoutes.js 
 │       |   ├── studentRoutes.js  
 │       |   └── vendorRoutes.js  
-        |___middleware
-             |___ auth.js
+│       └── middleware/ 
+|       |   └── auth.js
+│       └── tests/
+│       │   ├── adminController.test.js  
+│       │   ├── cartController.test.js
+│       │   ├── menuItemController.test.js  
+│       │   ├── orderController.test.js
+│       │   ├── paymentController.test.js
+│       │   ├── studentController.test.js  
+│       │   └── vendorController.test.js
+
 ├── frontend/  
 │   ├── package.json  
 │   ├── README.md  
@@ -53,12 +70,17 @@ KuduDash Main/KuduDash/
 │       ├── App.css  
 │       ├── App.js  
 │       ├── App.test.js  
+│       ├── Callback.js  
 │       ├── index.css  
 │       ├── index.js  
 │       ├── Login.css  
 │       ├── Login.js  
 │       ├── reportWebVitals.js  
+│       ├── ReviewForm.css  
+│       ├── ReviewForm.js  
 │       ├── setupTests.js  
+│       ├── VendorReview.css  
+│       ├── VendorReview.js  
 │       ├── Vibe.css  
 │       ├── Vibe.js  
 │       └── Dashboards/  
@@ -67,24 +89,24 @@ KuduDash Main/KuduDash/
 │       |    ├── Student.css  
 │       |    ├── Student.js  
 │       |    ├── Vendor.css  
-│       |    └── Vendor.js
-        |    |___ ProfilePanel.js
-        |    |___ ProfilePanel.css
-        |    |___ OrderManagement.js
-        |    |___ OrderManagement.css
-        |    |___ OrderTracking.js
-        |    |___ OrderTracking.css
-        |___ Cart/
-            |___ CartContext.js
-            |___ CartContext.css
-            |___ CartIcon.js
-            |___ CartIcon.css
-            |___ AddToCart.js
-            |___ AddToCart.css
-            |___ Cart.js
-            |___ Cart.css
-            |___ Checkout.js
-            |___ Checkout.css
+│       |    ├── Vendor.js
+|       |    ├── ProfilePanel.js
+|       |    ├── ProfilePanel.css
+|       |    ├── OrderManagement.js
+|       |    ├── OrderManagement.css
+|       |    ├── OrderTracking.js
+|       |    ├── OrderTracking.css
+|       └── Cart/
+|            ├── CartContext.js
+|            ├── Cart.css
+|            ├── Cart.js
+|            ├── Checkout.css
+|            ├── Checkout.js
+|       └── payment/
+|           ├── Payment.css
+|           ├── Payment.js
+|           ├── VendorEarnings.css
+|           └── VendorEarnings.js         
 
 - The backend folder contains your Node.js/Express API, with controllers, models, and route definitions.
 - The frontend folder contains your React app, with source code in src/, static assets in public/, and build output in build/.
