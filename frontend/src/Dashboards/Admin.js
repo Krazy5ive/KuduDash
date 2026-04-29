@@ -28,61 +28,193 @@ const StatsRow = ({ items, type }) => {
   );
 };
 
-const StudentModal = ({ student, onClose }) => (
-  <section className="kd-modal-overlay" role="dialog" aria-modal="true"
-    onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-    <article className="kd-modal">
-      <header><h2 className="kd-modal-title" id="modal-title">Student profile</h2></header>
-      <figure className="kd-cell-name" style={{ marginBottom: "4px" }}>
-        <p className="kd-cell-avatar green" aria-hidden="true">{initials(student.firstName + " " + student.lastName)}</p>
-        <figcaption className="kd-cell-name-text">
-          <strong>{student.firstName} {student.lastName}</strong>
-          <small className="kd-cell-subtext">{student.email}</small>
-        </figcaption>
-      </figure>
-      <ul className="kd-detail-list">
-        {[["Date joined", formatDate(student.createdAt)], ["Status", student.isActive ? "active" : "inactive"]].map(([label, value]) => (
-          <li className="kd-detail-row" key={label}>
-            <p className="kd-detail-label">{label}</p>
-            <p className="kd-detail-value">{label === "Status" ? <small className={`kd-badge ${value}`}>{value}</small> : value}</p>
-          </li>
-        ))}
-      </ul>
-      <footer className="kd-modal-footer"><button className="kd-btn ghost" onClick={onClose}>Close</button></footer>
-    </article>
-  </section>
-);
 
-const VendorModal = ({ vendor, onClose }) => (
-  <section className="kd-modal-overlay" role="dialog" aria-modal="true"
-    onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-    <article className="kd-modal">
-      <header><h2 className="kd-modal-title" id="vendor-modal-title">Vendor profile</h2></header>
-      <figure className="kd-cell-name" style={{ marginBottom: "4px" }}>
-        <p className="kd-cell-avatar purple" aria-hidden="true">{initials(vendor.businessName)}</p>
-        <figcaption className="kd-cell-name-text">
-          <strong>{vendor.businessName}</strong>
-          <small className="kd-cell-subtext">{vendor.email}</small>
-        </figcaption>
-      </figure>
-      <ul className="kd-detail-list">
-        {[
-          ["Location", vendor.location],
-          ["Owner", `${vendor.ownerFirstName} ${vendor.ownerLastName}`],
-          ["Phone", vendor.phone],
-          ["Date joined", formatDate(vendor.createdAt)],
-          ["Status", vendor.status],
-        ].map(([label, value]) => (
-          <li className="kd-detail-row" key={label}>
-            <p className="kd-detail-label">{label}</p>
-            <p className="kd-detail-value">{label === "Status" ? <small className={`kd-badge ${value}`}>{value}</small> : value}</p>
-          </li>
+
+const VendorModal = ({ vendor, onClose }) => {
+  const { getAccessTokenSilently } = useAuth0();
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const token = await getAccessTokenSilently({
+          authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
+        });
+        const res = await fetch(
+          `http://localhost:5000/api/orders/admin/vendor/${vendor._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const data = await res.json();
+        setOrders(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch vendor orders:", err);
+      } finally {
+        setLoadingOrders(false);
+      }
+    };
+    fetchOrders();
+  }, [vendor._id, getAccessTokenSilently]);
+
+  return (
+    <section className="kd-modal-overlay" role="dialog" aria-modal="true"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <article className="kd-modal">
+        <header><h2 className="kd-modal-title">Vendor profile</h2></header>
+        <figure className="kd-cell-name" style={{ marginBottom: "4px" }}>
+          <p className="kd-cell-avatar purple" aria-hidden="true">{initials(vendor.businessName)}</p>
+          <figcaption className="kd-cell-name-text">
+            <strong>{vendor.businessName}</strong>
+            <small className="kd-cell-subtext">{vendor.email}</small>
+          </figcaption>
+        </figure>
+        <ul className="kd-detail-list">
+          {[
+            ["Location", vendor.location],
+            ["Owner", `${vendor.ownerFirstName} ${vendor.ownerLastName}`],
+            ["Phone", vendor.phone],
+            ["Date joined", formatDate(vendor.createdAt)],
+            ["Status", vendor.status],
+          ].map(([label, value]) => (
+            <li className="kd-detail-row" key={label}>
+              <p className="kd-detail-label">{label}</p>
+              <p className="kd-detail-value">
+                {label === "Status"
+                  ? <small className={`kd-badge ${value}`}>{value}</small>
+                  : value}
+              </p>
+            </li>
+          ))}
+        </ul>
+
+        <p className="kd-sidebar-title" style={{ marginTop: "16px" }}>Orders</p>
+        {loadingOrders && <p className="kd-empty-state">Loading orders...</p>}
+        {!loadingOrders && orders.length === 0 && (
+          <p className="kd-empty-state">No orders found.</p>
+        )}
+        {orders.map((order) => (
+          <section className="kd-detail-row" key={order._id}
+            style={{ flexDirection: "column", alignItems: "flex-start", gap: "2px", padding: "10px 0" }}>
+            <section style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+              <section>
+                <p style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
+                  {formatDate(order.createdAt)}
+                </p>
+                <p style={{ fontSize: "13px" }}>
+                  {order.student
+                    ? `${order.student.firstName} ${order.student.lastName}`
+                    : "—"}
+                </p>
+              </section>
+              <section style={{ textAlign: "right" }}>
+                <small className={`kd-badge ${order.status}`}>{order.status}</small>
+                <p style={{ fontSize: "13px", color: "var(--kd-green)", marginTop: "2px" }}>
+                  R{Number(order.totalAmount).toFixed(2)}
+                </p>
+              </section>
+            </section>
+          </section>
         ))}
-      </ul>
-      <footer className="kd-modal-footer"><button className="kd-btn ghost" onClick={onClose}>Close</button></footer>
-    </article>
-  </section>
-);
+
+        <footer className="kd-modal-footer">
+          <button className="kd-btn ghost" onClick={onClose}>Close</button>
+        </footer>
+      </article>
+    </section>
+  );
+};
+
+// ── StudentModal ─────────────────────────────────────────────────────
+const StudentModal = ({ student, onClose }) => {
+  const { getAccessTokenSilently } = useAuth0();
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const token = await getAccessTokenSilently({
+          authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
+        });
+        const res = await fetch(
+          `http://localhost:5000/api/orders/admin/student/${student._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const data = await res.json();
+        setOrders(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch student orders:", err);
+      } finally {
+        setLoadingOrders(false);
+      }
+    };
+    fetchOrders();
+  }, [student._id, getAccessTokenSilently]);
+
+  return (
+    <section className="kd-modal-overlay" role="dialog" aria-modal="true"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <article className="kd-modal">
+        <header><h2 className="kd-modal-title">Student profile</h2></header>
+        <figure className="kd-cell-name" style={{ marginBottom: "4px" }}>
+          <p className="kd-cell-avatar green" aria-hidden="true">
+            {initials(`${student.firstName} ${student.lastName}`)}
+          </p>
+          <figcaption className="kd-cell-name-text">
+            <strong>{student.firstName} {student.lastName}</strong>
+            <small className="kd-cell-subtext">{student.email}</small>
+          </figcaption>
+        </figure>
+        <ul className="kd-detail-list">
+          {[
+            ["Date joined", formatDate(student.createdAt)],
+            ["Status", student.isActive ? "active" : "inactive"],
+          ].map(([label, value]) => (
+            <li className="kd-detail-row" key={label}>
+              <p className="kd-detail-label">{label}</p>
+              <p className="kd-detail-value">
+                {label === "Status"
+                  ? <small className={`kd-badge ${value}`}>{value}</small>
+                  : value}
+              </p>
+            </li>
+          ))}
+        </ul>
+
+        <p className="kd-sidebar-title" style={{ marginTop: "16px" }}>Orders</p>
+        {loadingOrders && <p className="kd-empty-state">Loading orders...</p>}
+        {!loadingOrders && orders.length === 0 && (
+          <p className="kd-empty-state">No orders found.</p>
+        )}
+        {orders.map((order) => (
+          <section className="kd-detail-row" key={order._id}
+            style={{ flexDirection: "column", alignItems: "flex-start", gap: "2px", padding: "10px 0" }}>
+            <section style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+              <section>
+                <p style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
+                  {formatDate(order.createdAt)}
+                </p>
+                <p style={{ fontSize: "13px" }}>
+                  {order.vendor?.businessName ?? "—"}
+                </p>
+              </section>
+              <section style={{ textAlign: "right" }}>
+                <small className={`kd-badge ${order.status}`}>{order.status}</small>
+                <p style={{ fontSize: "13px", color: "var(--kd-green)", marginTop: "2px" }}>
+                  R{Number(order.totalAmount).toFixed(2)}
+                </p>
+              </section>
+            </section>
+          </section>
+        ))}
+
+        <footer className="kd-modal-footer">
+          <button className="kd-btn ghost" onClick={onClose}>Close</button>
+        </footer>
+      </article>
+    </section>
+  );
+};
 
 const StudentsPage = () => {
   const [students, setStudents]             = useState([]);
