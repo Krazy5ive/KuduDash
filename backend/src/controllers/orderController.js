@@ -128,4 +128,38 @@ const getAllOrders = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getVendorOrders, getOrderById, createOrder, updateOrderStatus, getAllOrders };
+// ── Admin: get orders for a specific student ─────────────────────────
+const getOrdersByStudent = async (req, res) => {
+  try {
+    const orders = await Order.find({ student: req.params.studentId })
+      .populate("vendor", "businessName location")
+      .sort({ createdAt: -1 });
+
+    if (!orders.length) {
+      return res.status(200).json({ message: "This student has no orders.", orders: [] });
+    }
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ── Admin: get orders for a specific vendor ──────────────────────────
+const getOrdersByVendor = async (req, res) => {
+  try {
+    const orders = await Order.find({ vendor: req.params.vendorId })
+      .populate("student", "firstName lastName email")
+      .sort({ createdAt: -1 });
+
+    if (!orders.length) {
+      return res.status(200).json({ message: "This vendor has no orders.", orders: [] });
+    }
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { getOrders, getVendorOrders, getOrderById, createOrder, updateOrderStatus, getAllOrders, getOrdersByStudent,getOrdersByVendor };
