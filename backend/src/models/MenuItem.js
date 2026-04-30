@@ -10,6 +10,16 @@ const menuItemSchema = new Schema(
         imageUrl: { type: String, default: "" },
         category: { type: String, trim: true },
 
+        // Approval workflow
+        approvalStatus: {
+            type: String,
+            enum: ["pending", "approved", "rejected"],
+            default: "pending",
+        },
+        approvalReason: { type: String, default: "" },
+        approvedBy: { type: Schema.Types.ObjectId, ref: "Admin" },
+        approvedAt: { type: Date },
+
         // Availability
         isAvailable: { type: Boolean, default: true },
         isSoldOut: { type: Boolean, default: false },

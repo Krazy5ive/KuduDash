@@ -4,7 +4,23 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const getMenuItems = async (req, res) => {
   try {
-    const items = await MenuItem.find({ vendor: req.query.vendor, isAvailable: true });
+    const query = {};
+    if (req.query.vendor) query.vendor = req.query.vendor;
+
+    const status = req.query.status;
+    if (status === "all") {
+      // return every menu item for the vendor or across vendors
+    } else if (status) {
+      query.approvalStatus = status;
+      if (status === "approved") {
+        query.isAvailable = true;
+      }
+    } else {
+      query.$or = [{ approvalStatus: "approved" }, { approvalStatus: { $exists: false } }];
+      query.isAvailable = true;
+    }
+
+    const items = await MenuItem.find(query).populate("vendor", "businessName");
     res.json(items);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -87,4 +103,35 @@ const deleteMenuItem = async (req, res) => {
   }
 };
 
-module.exports = { getMenuItems, getMenuItemById, createMenuItem, updateMenuItem, deleteMenuItem };
+const setMenuItemApproval = async (req, res) => {
+  try {
+    const { approvalStatus, approvalReason } = req.body;
+
+    if (!["approved", "rejected"].includes(approvalStatus)) {
+      return res.status(400).json({ message: "Approval status must be 'approved' or 'rejected'" });
+    }
+
+    if (approvalStatus === "rejected" && !approvalReason?.trim()) {
+      return res.status(400).json({ message: "Approval reason is required for rejected items" });
+    }
+
+    const update = {
+      approvalStatus,
+      approvalReason: approvalStatus === "rejected" ? approvalReason.trim() : "",
+      approvedAt: new Date(),
+      approvedBy: req.admin?._id,
+    };
+
+    const item = await MenuItem.findByIdAndUpdate(req.params.id, update, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!item) return res.status(404).json({ message: "Menu item not found" });
+    res.json(item);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { getMenuItems, getMenuItemById, createMenuItem, updateMenuItem, deleteMenuItem, setMenuItemApproval };

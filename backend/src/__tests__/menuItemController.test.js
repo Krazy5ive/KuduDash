@@ -4,6 +4,7 @@ const {
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
+  setMenuItemApproval,
 } = require("../controllers/menuItemController");
 
 const MenuItem = require("../models/MenuItem");
@@ -33,7 +34,7 @@ describe("MenuItem Controller", () => {
      getMenuItems
   ======================= */
   describe("getMenuItems", () => {
-    it("returns available menu items for a vendor", async () => {
+    it("returns available approved menu items for a vendor", async () => {
       req.query = { vendor: "vendor123" };
       const items = [{ name: "Burger" }];
 
@@ -43,8 +44,21 @@ describe("MenuItem Controller", () => {
 
       expect(MenuItem.find).toHaveBeenCalledWith({
         vendor: "vendor123",
+        $or: [{ approvalStatus: "approved" }, { approvalStatus: { $exists: false } }],
         isAvailable: true,
       });
+      expect(res.json).toHaveBeenCalledWith(items);
+    });
+
+    it("returns all menu items when status is all", async () => {
+      req.query = { vendor: "vendor123", status: "all" };
+      const items = [{ name: "Burger" }, { name: "Salad" }];
+
+      MenuItem.find.mockResolvedValue(items);
+
+      await getMenuItems(req, res);
+
+      expect(MenuItem.find).toHaveBeenCalledWith({ vendor: "vendor123" });
       expect(res.json).toHaveBeenCalledWith(items);
     });
 
@@ -209,6 +223,52 @@ describe("MenuItem Controller", () => {
       await updateMenuItem(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+  /* =======================
+     setMenuItemApproval
+  ======================= */
+  describe("setMenuItemApproval", () => {
+    it("approves a menu item", async () => {
+      req.params = { id: "item123" };
+      req.body = { approvalStatus: "approved" };
+      req.admin = { _id: "admin1" };
+      const updatedItem = { name: "Burger", approvalStatus: "approved" };
+      MenuItem.findByIdAndUpdate.mockResolvedValue(updatedItem);
+
+      await setMenuItemApproval(req, res);
+
+      expect(MenuItem.findByIdAndUpdate).toHaveBeenCalledWith(
+        "item123",
+        expect.objectContaining({ approvalStatus: "approved", approvedBy: "admin1" }),
+        expect.any(Object)
+      );
+      expect(res.json).toHaveBeenCalledWith(updatedItem);
+    });
+
+    it("rejects a menu item with reason", async () => {
+      req.params = { id: "item123" };
+      req.body = { approvalStatus: "rejected", approvalReason: "Too many allergens" };
+      req.admin = { _id: "admin1" };
+      const updatedItem = { name: "Burger", approvalStatus: "rejected", approvalReason: "Too many allergens" };
+      MenuItem.findByIdAndUpdate.mockResolvedValue(updatedItem);
+
+      await setMenuItemApproval(req, res);
+
+      expect(MenuItem.findByIdAndUpdate).toHaveBeenCalledWith(
+        "item123",
+        expect.objectContaining({ approvalStatus: "rejected", approvalReason: "Too many allergens" }),
+        expect.any(Object)
+      );
+      expect(res.json).toHaveBeenCalledWith(updatedItem);
+    });
+
+    it("returns 400 when rejecting without reason", async () => {
+      req.params = { id: "item123" };
+      req.body = { approvalStatus: "rejected", approvalReason: "" };
+      await setMenuItemApproval(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
     });
   });
 
