@@ -1,4 +1,5 @@
-const Order = require("../models/Order");
+const Order  = require("../models/Order");
+const Vendor = require("../models/Vendor");
 
 // Vendor can set these — "paid" is set exclusively by the payment flow
 const VALID_STATUSES = [
@@ -57,6 +58,12 @@ const createOrder = async (req, res) => {
     const { vendorId, items, totalAmount } = req.body;
     if (!vendorId || !items?.length || !totalAmount) {
       return res.status(400).json({ message: "Missing required order fields" });
+    }
+
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) return res.status(404).json({ message: "Vendor not found" });
+    if (vendor.status === "suspended") {
+      return res.status(403).json({ message: "This vendor is currently unavailable." });
     }
 
     const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
