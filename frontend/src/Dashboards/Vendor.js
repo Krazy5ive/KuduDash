@@ -67,7 +67,7 @@ const Vendor = () => {
     if (!vendorId) return;
     try {
       const token = await getToken();
-      const res = await fetch(`/api/menu?vendor=${vendorId}&status=all`, {
+      const res = await fetch(`/api/menu?vendor=${vendorId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -393,19 +393,9 @@ const Vendor = () => {
                     </figure>
                   )}
                   <section className="kd-item-body">
-                    <div className="kd-item-meta">
-                      <p className="kd-item-category">{item.category}</p>
-                      {item.approvalStatus && item.approvalStatus !== "approved" && (
-                        <small className={`kd-badge ${item.approvalStatus}`}>
-                          {item.approvalStatus}
-                        </small>
-                      )}
-                    </div>
+                    <p className="kd-item-category">{item.category}</p>
                     <h3 className="kd-item-name">{item.name}</h3>
                     {item.description && <p className="kd-item-description">{item.description}</p>}
-                    {item.approvalStatus === "rejected" && item.approvalReason && (
-                      <p className="kd-item-reason">Reason: {item.approvalReason}</p>
-                    )}
                     <p className="kd-item-price">R{Number(item.price).toFixed(2)}</p>
                   </section>
                   <footer className="kd-item-actions">

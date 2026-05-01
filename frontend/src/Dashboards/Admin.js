@@ -745,193 +745,6 @@ const OverviewPage = () => {
   );
 };
 
-const MenuReviewPage = () => {
-  const { getAccessTokenSilently } = useAuth0();
-  const [menuItems, setMenuItems] = useState([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [refresh, setRefresh] = useState(0);
-
-  useEffect(() => {
-    const loadItems = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const token = await getAccessTokenSilently({
-          authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
-        });
-        const res = await fetch(`/api/menu?status=pending`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error("Failed to load menu approvals");
-        const data = await res.json();
-        setMenuItems(data);
-      } catch (err) {
-        console.error(err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadItems();
-  }, [getAccessTokenSilently, refresh]);
-
-  const [rejectingId, setRejectingId] = useState(null);
-  const [rejectReason, setRejectReason] = useState("");
-
-  const approveItem = async (id) => {
-    try {
-      setError("");
-      const token = await getAccessTokenSilently({
-        authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
-      });
-      const res = await fetch(`/api/menu/${id}/approval`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ approvalStatus: "approved" }),
-      });
-      if (!res.ok) {
-        const body = await res.json();
-        throw new Error(body.message || "Approval failed");
-      }
-      setRefresh((prev) => prev + 1);
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    }
-  };
-
-  const startReject = (id, existingReason = "") => {
-    setRejectingId(id);
-    setRejectReason(existingReason);
-    setError("");
-  };
-
-  const cancelReject = () => {
-    setRejectingId(null);
-    setRejectReason("");
-    setError("");
-  };
-
-  const submitReject = async (item) => {
-    if (!rejectReason.trim()) {
-      setError("Rejection reason is required.");
-      return;
-    }
-
-    try {
-      setError("");
-      const token = await getAccessTokenSilently({
-        authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
-      });
-      const res = await fetch(`/api/menu/${item._id}/approval`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ approvalStatus: "rejected", approvalReason: rejectReason }),
-      });
-      if (!res.ok) {
-        const body = await res.json();
-        throw new Error(body.message || "Rejection failed");
-      }
-      setRefresh((prev) => prev + 1);
-      cancelReject();
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    }
-  };
-
-  const filteredItems = menuItems.filter((item) => {
-    const text = `${item.name} ${item.category} ${item.vendor?.businessName || item.vendor}`.toLowerCase();
-    return text.includes(search.toLowerCase());
-  });
-
-  return (
-    <section aria-label="Menu review">
-      <form className="kd-search-row" role="search" onSubmit={(e) => e.preventDefault()}>
-        <section className="kd-search-wrap">
-          <svg className="kd-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></svg>
-          <input className="kd-search-input" type="search" placeholder="Search by item, vendor or category…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search menu items" />
-        </section>
-      </form>
-
-      {error && <p className="kd-state-msg kd-error">{error}</p>}
-      {loading && <p className="kd-state-msg">Loading pending menu items…</p>}
-
-      <section className="kd-table-wrap">
-        <table className="kd-table">
-          <thead>
-            <tr>
-              <th>Vendor</th>
-              <th>Item</th>
-              <th>Category</th>
-              <th>Price</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {!loading && filteredItems.length === 0 && (
-              <tr><td colSpan={5}><p className="kd-empty-state">No pending menu items found.</p></td></tr>
-            )}
-            {filteredItems.map((item) => (
-              <React.Fragment key={item._id}>
-                <tr>
-                  <td>{item.vendor?.businessName || item.vendor || "Unknown"}</td>
-                  <td>
-                    <strong>{item.name}</strong>
-                    {item.approvalReason && <p className="kd-item-reason">Reason: {item.approvalReason}</p>}
-                  </td>
-                  <td>{item.category}</td>
-                  <td>R{Number(item.price).toFixed(2)}</td>
-                  <td>
-                    <section className="kd-table-actions">
-                      <button className="kd-action-btn approve" onClick={() => approveItem(item._id)}>Approve</button>
-                      <button className="kd-action-btn reject" onClick={() => startReject(item._id, item.approvalReason)}>Reject</button>
-                    </section>
-                  </td>
-                </tr>
-                {rejectingId === item._id && (
-                  <tr className="kd-reject-row">
-                    <td colSpan={5}>
-                      <div className="kd-reject-form">
-                        <label htmlFor={`reject-${item._id}`}>Reason for reject</label>
-                        <textarea
-                          id={`reject-${item._id}`}
-                          className="kd-reject-textarea"
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                          placeholder="e.g. contains allergens, not allowed ingredient, or incorrect pricing"
-                        />
-                        <div className="kd-reject-actions">
-                          <button className="kd-btn danger" type="button" onClick={() => submitReject(item)}>
-                            Submit rejection
-                          </button>
-                          <button className="kd-btn ghost" type="button" onClick={cancelReject}>
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            ))}
-
-          </tbody>
-        </table>
-      </section>
-    </section>
-  );
-};
-
 const PlaceholderPage = ({ label }) => (
   <section aria-label={`${label} placeholder`} className="kd-placeholder">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M9 9h6M9 13h4" /></svg>
@@ -944,7 +757,6 @@ const NAV_ITEMS = [
   { id: "overview",  label: "Overview",  icon: <><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /></> },
   { id: "students",  label: "Students",  icon: <><path d="M12 3L2 8l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></> },
   { id: "vendors",   label: "Vendors",   icon: <path d="M3 9l9-6 9 6v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /> },
-  { id: "menu",      label: "Menu Review", icon: <path d="M4 6h16v2H4zm0 6h16v2H4zm0 6h16v2H4z" /> },
   { id: "orders",    label: "Orders",    icon: <path d="M6 2h12v20H6zM6 6h12" /> },
   { id: "analytics", label: "Analytics", icon: <path d="M4 20V10M9 20V4M14 20v-6M19 20v-9" /> },
   { id: "reports",   label: "Reports",   icon: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M9 13h6M9 17h4" /></> },
@@ -953,9 +765,8 @@ const NAV_ITEMS = [
 
 const PAGE_SUBTITLES = {
   overview: "Platform at a glance", students: "Manage registered students",
-  vendors: "Manage registered vendors", menu: "Review vendor menu items",
-  orders: "View and manage all orders", analytics: "Platform usage and trends",
-  reports: "Generated reports", settings: "System configuration",
+  vendors: "Manage registered vendors", orders: "View and manage all orders",
+  analytics: "Platform usage and trends", reports: "Generated reports", settings: "System configuration",
 };
 
 // ── Main Admin component ─────────────────────────────────────────────
@@ -1004,7 +815,6 @@ const Admin = () => {
       case "students": return <StudentsPage />;
       case "vendors":  return <VendorsPage />;
       case "overview": return <OverviewPage />;
-      case "menu":     return <MenuReviewPage />;
       default:         return <PlaceholderPage label={NAV_ITEMS.find((n) => n.id === activeNav)?.label ?? activeNav} />;
     }
   };
