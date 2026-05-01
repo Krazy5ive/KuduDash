@@ -9,6 +9,8 @@ const {
   updateVendor,
   updateVendorProfile,
   uploadLogoMiddleware,
+  suspendVendor,
+  reinstateVendor,
 } = require("../controllers/vendorController");
 
 const { verifyToken, attachVendor } = require("../middleware/auth");
@@ -24,5 +26,9 @@ router.put("/:id",  updateVendor);
 
 // Profile update (vendor self-service) — handles multipart/form-data + optional logo upload
 router.patch("/:id/profile", uploadLogoMiddleware, updateVendorProfile);
+
+// Admin: suspend / reinstate
+router.patch("/:id/suspend",   suspendVendor);
+router.patch("/:id/reinstate", reinstateVendor);
 
 module.exports = router;
