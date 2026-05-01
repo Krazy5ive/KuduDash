@@ -116,6 +116,21 @@ const VendorModal = ({ vendor, onClose }) => {
           </section>
         ))}
 
+        {vendor.status === "suspended" && vendor.statusReason && (
+          <ul className="kd-detail-list" style={{ marginTop: "8px" }}>
+            <li className="kd-detail-row">
+              <p className="kd-detail-label">Suspension reason</p>
+              <p className="kd-detail-value">{vendor.statusReason}</p>
+            </li>
+            {vendor.suspendedAt && (
+              <li className="kd-detail-row">
+                <p className="kd-detail-label">Suspended on</p>
+                <p className="kd-detail-value">{formatDate(vendor.suspendedAt)}</p>
+              </li>
+            )}
+          </ul>
+        )}
+
         <footer className="kd-modal-footer">
           <button className="kd-btn ghost" onClick={onClose}>Close</button>
         </footer>
@@ -216,6 +231,56 @@ const StudentModal = ({ student, onClose }) => {
   );
 };
 
+const SUSPENSION_REASONS = [
+  "Repeated order cancellations",
+  "Food quality or hygiene complaints",
+  "Fraudulent activity",
+  "Policy violation",
+  "Inappropriate behaviour reported",
+];
+
+const SuspendModal = ({ vendor, onConfirm, onClose }) => {
+  const [reason, setReason] = useState("");
+  const [error, setError]   = useState("");
+
+  const handleConfirm = () => {
+    if (!reason.trim()) {
+      setError("Please select a reason before suspending.");
+      return;
+    }
+    onConfirm(vendor._id, reason);
+  };
+
+  return (
+    <section className="kd-modal-overlay" role="dialog" aria-modal="true"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <article className="kd-modal">
+        <header><h2 className="kd-modal-title">Suspend vendor</h2></header>
+        <p className="kd-suspend-desc">
+          You are about to suspend <strong>{vendor.businessName}</strong>. Please provide a reason.
+        </p>
+        <section className="kd-form-group">
+          <label className="kd-form-label" htmlFor="suspend-reason">Reason for suspension</label>
+          <select
+            id="suspend-reason"
+            className="kd-form-select"
+            value={reason}
+            onChange={(e) => { setReason(e.target.value); setError(""); }}
+          >
+            <option value="">— Select a reason —</option>
+            {SUSPENSION_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+          {error && <p className="kd-form-error">{error}</p>}
+        </section>
+        <footer className="kd-modal-footer">
+          <button className="kd-btn ghost" onClick={onClose}>Cancel</button>
+          <button className="kd-btn danger" onClick={handleConfirm}>Suspend Vendor</button>
+        </footer>
+      </article>
+    </section>
+  );
+};
+
 const StudentsPage = () => {
   const [students, setStudents]             = useState([]);
   const [search, setSearch]                 = useState("");
@@ -288,11 +353,12 @@ const StudentsPage = () => {
 };
 
 const VendorsPage = () => {
-  const [vendors, setVendors]             = useState([]);
-  const [search, setSearch]               = useState("");
-  const [filterStatus, setFilterStatus]   = useState("all");
-  const [viewingVendor, setViewingVendor] = useState(null);
-  const [loading, setLoading]             = useState(true);
+  const [vendors, setVendors]                   = useState([]);
+  const [search, setSearch]                     = useState("");
+  const [filterStatus, setFilterStatus]         = useState("all");
+  const [viewingVendor, setViewingVendor]       = useState(null);
+  const [suspendingVendor, setSuspendingVendor] = useState(null);
+  const [loading, setLoading]                   = useState(true);
 
   useEffect(() => {
     fetch("http://localhost:5000/api/vendors")
@@ -306,14 +372,26 @@ const VendorsPage = () => {
     return matchSearch && (filterStatus === "all" || v.status === filterStatus);
   }), [vendors, search, filterStatus]);
 
-  const toggleStatus = (id) => {
-    const vendor = vendors.find((v) => v._id === id);
-    const newStatus = vendor.status === "active" ? "suspended" : "active";
-    fetch(`http://localhost:5000/api/vendors/${id}`, {
-      method: "PUT",
+  const handleSuspend = (id, reason) => {
+    fetch(`http://localhost:5000/api/vendors/${id}/suspend`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    }).then((res) => res.json()).then((updated) => setVendors((prev) => prev.map((v) => v._id === id ? updated : v)));
+      body: JSON.stringify({ reason }),
+    })
+      .then((res) => res.json())
+      .then((updated) => {
+        setVendors((prev) => prev.map((v) => v._id === id ? updated : v));
+        setSuspendingVendor(null);
+      });
+  };
+
+  const handleReinstate = (id) => {
+    fetch(`http://localhost:5000/api/vendors/${id}/reinstate`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((res) => res.json())
+      .then((updated) => setVendors((prev) => prev.map((v) => v._id === id ? updated : v)));
   };
 
   return (
@@ -350,9 +428,11 @@ const VendorsPage = () => {
                 <td>
                   <section className="kd-table-actions">
                     <button className="kd-action-btn view" onClick={() => setViewingVendor(vendor)}>View</button>
-                    <button className={`kd-action-btn ${vendor.status === "active" ? "suspend" : "restore"}`} onClick={() => toggleStatus(vendor._id)}>
-                      {vendor.status === "active" ? "Suspend" : "Restore"}
-                    </button>
+                    {vendor.status === "suspended" ? (
+                      <button className="kd-action-btn restore" onClick={() => handleReinstate(vendor._id)}>Reinstate</button>
+                    ) : (
+                      <button className="kd-action-btn suspend" onClick={() => setSuspendingVendor(vendor)}>Suspend</button>
+                    )}
                   </section>
                 </td>
               </tr>
@@ -360,7 +440,8 @@ const VendorsPage = () => {
           </tbody>
         </table>
       </section>
-      {viewingVendor && <VendorModal vendor={viewingVendor} onClose={() => setViewingVendor(null)} />}
+      {viewingVendor    && <VendorModal vendor={viewingVendor} onClose={() => setViewingVendor(null)} />}
+      {suspendingVendor && <SuspendModal vendor={suspendingVendor} onConfirm={handleSuspend} onClose={() => setSuspendingVendor(null)} />}
     </section>
   );
 };
@@ -659,6 +740,11 @@ const OverviewPage = () => {
             </li>
           </ul>
         </aside>
+      </section>
+    </section>
+  );
+};
+
 const MenuReviewPage = () => {
   const { getAccessTokenSilently } = useAuth0();
   const [menuItems, setMenuItems] = useState([]);
