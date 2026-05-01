@@ -8,6 +8,10 @@ const PF_URL = process.env.NODE_ENV === 'production'
   ? 'https://www.payfast.co.za/eng/process'
   : 'https://sandbox.payfast.co.za/eng/process';
 
+// Builds an MD5 signature string from the payment data fields.
+// PayFast requires every request to be signed so they can verify it was not tampered with.
+// Fields are URL-encoded in key=value pairs, joined by &, then the passphrase is appended.
+// The resulting string is MD5-hashed and returned as a hex digest.
 function buildSignature(data, passphrase) {
   let str = Object.entries(data)
     .filter(([, v]) => v !== '')
@@ -17,7 +21,11 @@ function buildSignature(data, passphrase) {
   return crypto.createHash('md5').update(str).digest('hex');
 }
 
-// POST /api/payments/initiate
+// Builds and returns the PayFast payment form data for a given order.
+// Verifies the student owns the order and that it has not already been paid.
+// Constructs the pfData object with merchant credentials, student details, amount,
+// and the three callback URLs (return, cancel, notify), then signs it with buildSignature.
+// Returns pfData (hidden form fields) and pfUrl (PayFast endpoint) to the frontend.
 exports.initiatePayment = async (req, res) => {
   try {
     const { orderId } = req.body;
@@ -54,7 +62,11 @@ exports.initiatePayment = async (req, res) => {
   }
 };
 
-// POST /api/payments/notify  (PayFast ITN — no JWT, PayFast signs it)
+// Handles the Instant Transaction Notification (ITN) posted by PayFast's servers
+// after a successful payment. This is a server-to-server call — no student JWT is present.
+// Strips the signature from the received data, recomputes it using buildSignature,
+// and rejects the request if they do not match (prevents spoofed notifications).
+// On a valid COMPLETE status, finds the order by m_payment_id and promotes it to paid.
 exports.handleNotify = async (req, res) => {
   try {
     const data = { ...req.body };
@@ -84,11 +96,11 @@ exports.handleNotify = async (req, res) => {
   }
 };
 
-// GET /api/payments/verify/:orderId
-// Called by the frontend after PayFast redirects back to return_url.
-// If the order is still "received" (ITN couldn't reach localhost in dev),
-// promote it to "paid" here — the student is authenticated and owns the order.
-// In production, ITN fires first so the order is already "paid" on arrival.
+// Checks and returns the current payment status of an order for the authenticated student.
+// Called by the frontend result page after PayFast redirects back to return_url.
+// If the order is still in received status (meaning the ITN could not reach localhost
+// in local development), this endpoint promotes it to paid directly as a fallback.
+// In production the ITN fires first so the order is already paid when this is called.
 exports.verifyPayment = async (req, res) => {
   try {
     const order = await Order.findById(req.params.orderId);
