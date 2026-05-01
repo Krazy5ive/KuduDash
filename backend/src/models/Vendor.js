@@ -39,6 +39,7 @@ const vendorSchema = new Schema(
 
         //admin note when suspending
         statusReason: {type: String},
+        suspendedAt: {type: Date},
         approvedBy: {type: Schema.Types.ObjectId, ref: "Admin"},
         approvedAt: {type: Date},
 
