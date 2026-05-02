@@ -2,6 +2,7 @@ import express from 'express'
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 import path from 'path'
+import { exec } from 'child_process'
 
 const require = createRequire(import.meta.url)
 const { createProxyMiddleware } = require('http-proxy-middleware')
@@ -33,4 +34,5 @@ app.get('/{*splat}', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`)
+    exec(`start http://localhost:${PORT}`)
 })
