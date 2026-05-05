@@ -1,4 +1,4 @@
-// server.js
+// backend/server.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -26,7 +26,7 @@ app.get("/", (req, res) => {
 app.use("/api/students", studentRoutes);
 app.use("/api/vendors",  vendorRoutes);
 app.use("/api/admins",   adminRoutes);
-app.use("/api/menu",     menuItemRoutes);
+app.use("/api/menu-items",     menuItemRoutes);
 app.use("/api/orders",   orderRoutes);
 app.use("/api/auth",     authRoutes);
 app.use("/api/cart",     cartRoutes);

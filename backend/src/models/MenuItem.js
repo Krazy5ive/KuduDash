@@ -1,3 +1,4 @@
+//MenuItem.js model
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
