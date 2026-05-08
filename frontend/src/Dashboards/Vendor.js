@@ -18,7 +18,7 @@ const EMPTY_FORM = {
 };
 
 const Vendor = () => {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, logout } = useAuth0();
   const location = useLocation();
   const vendorId = location.state?.vendorId || "";
 
@@ -32,6 +32,8 @@ const Vendor = () => {
   const [editingId,      setEditingId]      = useState(null);
   const [pendingDeleteId,setPendingDeleteId]= useState(null);
   const [formError,      setFormError]      = useState("");
+
+   const [isSuspended, setIsSuspended] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -58,6 +60,7 @@ const Vendor = () => {
       if (!res.ok) throw new Error("Failed to fetch vendor profile");
       const data = await res.json();
       setVendorProfile(data);
+      if (data.status === "suspended") setIsSuspended(true);
     } catch (err) {
       console.error("Error fetching vendor profile:", err);
     }
@@ -284,6 +287,29 @@ const Vendor = () => {
   /* ── Render ── */
   return (
     <main className="kd-app">
+
+      {isSuspended && (
+        <section
+          className="kd-modal-overlay"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="suspended-title"
+          style={{ zIndex: 9999 }}
+        >
+          <article className="kd-modal" style={{ textAlign: "center", maxWidth: 420 }}>
+            <h2 className="kd-modal-title" id="suspended-title">Account suspended</h2>
+            <p className="kd-confirm-text">
+              Your vendor account has been suspended. You cannot access the dashboard
+              at this time. Please contact support if you believe this is a mistake.
+            </p>
+            <footer className="kd-form-footer" style={{ justifyContent: "center" }}>
+              <button className="kd-btn danger" onClick={() => logout({ returnTo: window.location.origin })}>
+                Sign out
+              </button>
+            </footer>
+          </article>
+        </section>
+      )}
 
       {/* SIDEBAR */}
       <aside
