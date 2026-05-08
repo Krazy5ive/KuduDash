@@ -661,10 +661,16 @@ const OverviewPage = () => {
   const filteredByDate = useMemo(() => {
     if (dateRange === "all") return orders;
     const now = new Date();
-    const cutoff = new Date();
-    if (dateRange === "today") cutoff.setHours(0, 0, 0, 0);
-    if (dateRange === "week")  cutoff.setDate(now.getDate() - 7);
-    if (dateRange === "month") cutoff.setMonth(now.getMonth() - 1);
+    let cutoff;
+    if (dateRange === "today") {
+      cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    } else if (dateRange === "week") {
+      cutoff = new Date(now);
+      cutoff.setDate(now.getDate() - 7);
+      cutoff.setHours(0, 0, 0, 0);
+    } else if (dateRange === "month") {
+      cutoff = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    }
     return orders.filter((o) => new Date(o.createdAt) >= cutoff);
   }, [orders, dateRange]);
 
