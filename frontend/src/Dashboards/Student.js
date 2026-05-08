@@ -6,6 +6,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import "./Student.css";
 import ProfilePanel from "./ProfilePanel";
 import OrderTracking from "./OrderTracking";
+import ReviewForm from "../ReviewForm";
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
@@ -381,6 +382,7 @@ const Student = () => {
         // ── Orders page — now uses OrderTracking ──────────────────────
         activeNav === "orders" && React.createElement(OrderTracking, {
           successOrders: orderSuccess,
+          ReviewFormComponent: ReviewForm,   // pass it down as a prop
         }),
 
         // ── Other pages ───────────────────────────────────────────────

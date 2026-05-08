@@ -3,6 +3,12 @@ import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react';
 import './Payment.css';
 
+// Displayed after PayFast redirects the student back to return_url.
+// Checks if the payment was cancelled via query param, then polls the verify endpoint
+// every 2.5 seconds (up to 8 attempts) until the order status becomes paid.
+// If Auth0 session was lost during the PayFast redirect, redirects to login
+// with returnTo so the student lands back here after re-authenticating.
+// Auto-navigates to order tracking 3 seconds after confirming paid status.
 function PaymentResult({ orderId }) {
   const [searchParams]                     = useSearchParams();
   const isCancelled                        = searchParams.get('cancelled') === 'true';
@@ -11,6 +17,9 @@ function PaymentResult({ orderId }) {
   const { getAccessTokenSilently, isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
   const navigate                          = useNavigate();
 
+  // Polls /api/payments/verify/:orderId until the order is marked as paid.
+  // Handles Auth0 session loss after the full-page PayFast redirect by
+  // redirecting to login if isAuthenticated is false or a login_required error is thrown.
   useEffect(() => {
     if (isCancelled) return;
     if (isLoading) return;
@@ -56,6 +65,7 @@ function PaymentResult({ orderId }) {
     return () => { dead = true; };
   }, [orderId, isCancelled, isAuthenticated, isLoading, getAccessTokenSilently, loginWithRedirect]);
 
+  // Once payment is confirmed, auto-redirect to order tracking after 3 seconds.
   useEffect(() => {
     if (status !== 'paid') return;
     const t = setTimeout(() => navigate('/dashboard/student?tab=orders'), 3000);
@@ -116,6 +126,12 @@ function PaymentResult({ orderId }) {
   );
 }
 
+// Main payment screen rendered at /payment/:orderId.
+// On mount, calls /api/payments/initiate and /api/orders/:orderId in parallel to fetch
+// the PayFast form data (pfData, pfUrl) and the order total for display.
+// Renders a hidden HTML form pre-filled with pfData fields. When the student clicks Pay,
+// handlePay submits the form — the browser navigates to PayFast's hosted payment page.
+// If showResult is true, renders PaymentResult instead (used at /payment/result/:orderId).
 const PaymentPage = ({ showResult = false }) => {
   const { orderId }                        = useParams();
   const { getAccessTokenSilently }         = useAuth0();
@@ -129,6 +145,8 @@ const PaymentPage = ({ showResult = false }) => {
   const [expanded, setExpanded]           = useState(false);
   const [redirecting, setRedirecting]     = useState(false);
 
+  // Fetches PayFast form data and order total when the payment page mounts.
+  // Skipped entirely when showResult is true (result page has its own data fetching).
   useEffect(() => {
     if (showResult) { setLoading(false); return; }
 
@@ -163,6 +181,7 @@ const PaymentPage = ({ showResult = false }) => {
     initPayment();
   }, [orderId, showResult, getAccessTokenSilently]);
 
+  // Submits the hidden PayFast form, redirecting the browser to PayFast's payment page.
   const handlePay = () => {
     setRedirecting(true);
     formRef.current?.submit();

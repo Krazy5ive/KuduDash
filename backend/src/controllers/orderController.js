@@ -1,4 +1,5 @@
-const Order = require("../models/Order");
+const Order  = require("../models/Order");
+const Vendor = require("../models/Vendor");
 
 // Vendor can set these — "paid" is set exclusively by the payment flow
 const VALID_STATUSES = [
@@ -59,6 +60,12 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ message: "Missing required order fields" });
     }
 
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) return res.status(404).json({ message: "Vendor not found" });
+    if (vendor.status === "suspended") {
+      return res.status(403).json({ message: "This vendor is currently unavailable." });
+    }
+
     const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
     const order = new Order({
@@ -114,4 +121,52 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getVendorOrders, getOrderById, createOrder, updateOrderStatus };
+// ── Admin: get all orders ───────────────────────────────────────────
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("student", "firstName lastName")
+      .populate("vendor", "businessName")
+      .sort({ createdAt: -1 });
+
+    res.json(orders); // IMPORTANT: return array
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ── Admin: get orders for a specific student ─────────────────────────
+const getOrdersByStudent = async (req, res) => {
+  try {
+    const orders = await Order.find({ student: req.params.studentId })
+      .populate("vendor", "businessName location")
+      .sort({ createdAt: -1 });
+
+    if (!orders.length) {
+      return res.status(200).json({ message: "This student has no orders.", orders: [] });
+    }
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ── Admin: get orders for a specific vendor ──────────────────────────
+const getOrdersByVendor = async (req, res) => {
+  try {
+    const orders = await Order.find({ vendor: req.params.vendorId })
+      .populate("student", "firstName lastName email")
+      .sort({ createdAt: -1 });
+
+    if (!orders.length) {
+      return res.status(200).json({ message: "This vendor has no orders.", orders: [] });
+    }
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { getOrders, getVendorOrders, getOrderById, createOrder, updateOrderStatus, getAllOrders, getOrdersByStudent,getOrdersByVendor };

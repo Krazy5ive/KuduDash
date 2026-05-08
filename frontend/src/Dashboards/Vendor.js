@@ -5,6 +5,7 @@ import { useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import ProfilePanel from "./ProfilePanel";
 import OrderManagement from "./OrderManagement";
+import VendorReviews from "../VendorReviews";
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
@@ -17,20 +18,22 @@ const EMPTY_FORM = {
 };
 
 const Vendor = () => {
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, logout } = useAuth0();
   const location = useLocation();
-  const vendorId  = location.state?.vendorId       || "";
+  const vendorId = location.state?.vendorId || "";
 
-  const [expanded, setExpanded] = useState(false);
-  const [activeNav, setActiveNav] = useState("menu");
-  const [menuItems, setMenuItems] = useState([]);
-  const [vendorProfile, setVendorProfile] = useState(null);
+  const [expanded,       setExpanded]       = useState(false);
+  const [activeNav,      setActiveNav]      = useState("menu");
+  const [menuItems,      setMenuItems]      = useState([]);
+  const [vendorProfile,  setVendorProfile]  = useState(null);
 
-  const [modal, setModal] = useState(null);
-  const [formData, setFormData] = useState(EMPTY_FORM);
-  const [editingId, setEditingId] = useState(null);
-  const [pendingDeleteId, setPendingDeleteId] = useState(null);
-  const [formError, setFormError] = useState("");
+  const [modal,          setModal]          = useState(null);
+  const [formData,       setFormData]       = useState(EMPTY_FORM);
+  const [editingId,      setEditingId]      = useState(null);
+  const [pendingDeleteId,setPendingDeleteId]= useState(null);
+  const [formError,      setFormError]      = useState("");
+
+   const [isSuspended, setIsSuspended] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -57,6 +60,7 @@ const Vendor = () => {
       if (!res.ok) throw new Error("Failed to fetch vendor profile");
       const data = await res.json();
       setVendorProfile(data);
+      if (data.status === "suspended") setIsSuspended(true);
     } catch (err) {
       console.error("Error fetching vendor profile:", err);
     }
@@ -76,7 +80,7 @@ const Vendor = () => {
     }
   };
 
-  // ── Profile update handler (passed to ProfilePanel) ──────────────────
+  // ── Profile update handler ───────────────────────────────────────────
 
   const handleProfileUpdate = async (formData) => {
     const token = await getToken();
@@ -284,6 +288,29 @@ const Vendor = () => {
   return (
     <main className="kd-app">
 
+      {isSuspended && (
+        <section
+          className="kd-modal-overlay"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="suspended-title"
+          style={{ zIndex: 9999 }}
+        >
+          <article className="kd-modal" style={{ textAlign: "center", maxWidth: 420 }}>
+            <h2 className="kd-modal-title" id="suspended-title">Account suspended</h2>
+            <p className="kd-confirm-text">
+              Your vendor account has been suspended. You cannot access the dashboard
+              at this time. Please contact support if you believe this is a mistake.
+            </p>
+            <footer className="kd-form-footer" style={{ justifyContent: "center" }}>
+              <button className="kd-btn danger" onClick={() => logout({ returnTo: window.location.origin })}>
+                Sign out
+              </button>
+            </footer>
+          </article>
+        </section>
+      )}
+
       {/* SIDEBAR */}
       <aside
         className={`kd-sidebar ${expanded ? "expanded" : ""}`}
@@ -308,6 +335,15 @@ const Vendor = () => {
                 onClick={() => setActiveNav("orders")} aria-current={activeNav === "orders" ? "page" : undefined}>
                 <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true"><path d="M6 2h12v20H6zM6 6h12" /></svg>
                 {expanded && <p className="kd-nav-text">Orders</p>}
+              </button>
+            </li>
+            <li>
+              <button className={`kd-nav-item ${activeNav === "reviews" ? "active" : ""}`}
+                onClick={() => setActiveNav("reviews")} aria-current={activeNav === "reviews" ? "page" : undefined}>
+                <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                {expanded && <p className="kd-nav-text">Reviews</p>}
               </button>
             </li>
             <li>
@@ -337,11 +373,14 @@ const Vendor = () => {
         <header className="kd-topbar">
           <section>
             <h1 className="kd-page-title">
-              {activeNav === "orders" ? "Orders" : activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
+              {activeNav === "orders"  ? "Orders"
+                : activeNav === "reviews" ? "Reviews"
+                : activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}
             </h1>
             <p className="kd-page-sub">
-              {activeNav === "menu"    ? "Manage what you sell"
-                : activeNav === "orders" ? "Manage and advance customer orders"
+              {activeNav === "menu"     ? "Manage what you sell"
+                : activeNav === "orders"  ? "Manage and advance customer orders"
+                : activeNav === "reviews" ? "See what your customers are saying"
                 : "Coming soon"}
             </p>
           </section>
@@ -395,11 +434,18 @@ const Vendor = () => {
           </section>
         )}
 
-        {/* ORDERS PAGE — now uses OrderManagement */}
+        {/* ORDERS PAGE */}
         {activeNav === "orders" && <OrderManagement />}
 
+        {/* REVIEWS PAGE — UAT 4 & 5 */}
+        {activeNav === "reviews" && (
+          vendorId
+            ? <VendorReviews vendorId={vendorId} />
+            : <p style={{ color: "#475569", fontSize: "14px" }}>Vendor ID not available.</p>
+        )}
+
         {/* OTHER PAGES */}
-        {activeNav !== "menu" && activeNav !== "orders" && (
+        {activeNav !== "menu" && activeNav !== "orders" && activeNav !== "reviews" && (
           <section aria-label={`${activeNav} placeholder`}>
             <p style={{ color: "#475569", fontSize: "14px" }}>
               The <strong>{activeNav}</strong> section is not yet implemented.

@@ -83,6 +83,58 @@ const updateVendorProfile = async (req, res) => {
   }
 };
 
+const suspendVendor = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({ message: "A suspension reason is required." });
+    }
+    const vendor = await Vendor.findByIdAndUpdate(
+      req.params.id,
+      { status: "suspended", statusReason: reason.trim(), suspendedAt: new Date() },
+      { new: true }
+    );
+    if (!vendor) return res.status(404).json({ message: "Vendor not found" });
+    res.json(vendor);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const reinstateVendor = async (req, res) => {
+  try {
+    const vendor = await Vendor.findByIdAndUpdate(
+      req.params.id,
+      { status: "active", statusReason: "", suspendedAt: null },
+      { new: true }
+    );
+    if (!vendor) return res.status(404).json({ message: "Vendor not found" });
+    res.json(vendor);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const requireNotSuspended = async (req, res, next) => {
+  try {
+    const vendorId = req.params.id || req.query.vendor || req.body.vendor;
+    if (!vendorId) return next();
+
+    const vendor = await Vendor.findById(vendorId).select("status");
+    if (!vendor) return res.status(404).json({ message: "Vendor not found" });
+
+    if (vendor.status === "suspended") {
+      return res.status(403).json({
+        message: "Your account has been suspended. Please contact support.",
+      });
+    }
+
+    next();
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getAllVendors,
   getVendorById,
@@ -90,4 +142,7 @@ module.exports = {
   updateVendor,
   updateVendorProfile,
   uploadLogoMiddleware,
+  suspendVendor,
+  reinstateVendor,
+  requireNotSuspended,
 };
