@@ -1,7 +1,9 @@
 const { getOrders, getOrderById, createOrder, updateOrderStatus } = require('../controllers/orderController');
-
+//orderController.test.js
 jest.mock('../models/Order');
+jest.mock('../models/Vendor');
 const Order = require('../models/Order');
+const Vendor = require('../models/Vendor');
 
 const mockRes = () => {
   const res = {};
@@ -107,6 +109,9 @@ describe('getOrderById', () => {
 
 describe('createOrder', () => {
   it('should create and return a new order', async () => {
+    const fakeVendor = { _id: 'vendor123', status: 'active' };
+    Vendor.findById = jest.fn().mockResolvedValue(fakeVendor);
+
     const fakeOrder = {
       _id: '1',
       status: 'pending',
@@ -134,6 +139,9 @@ describe('createOrder', () => {
   });
 
   it('should return 400 on error', async () => {
+    const fakeVendor = { _id: 'vendor123', status: 'active' };
+    Vendor.findById = jest.fn().mockResolvedValue(fakeVendor);
+
     const fakeOrder = { save: jest.fn().mockRejectedValue(new Error('Validation error')) };
     Order.mockImplementation(() => fakeOrder);
 
