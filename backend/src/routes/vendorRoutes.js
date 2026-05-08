@@ -11,6 +11,7 @@ const {
   uploadLogoMiddleware,
   suspendVendor,
   reinstateVendor,
+  requireNotSuspended,
 } = require("../controllers/vendorController");
 
 const { verifyToken, attachVendor } = require("../middleware/auth");
@@ -25,7 +26,7 @@ router.post("/",    createVendor);
 router.put("/:id",  updateVendor);
 
 // Profile update (vendor self-service) — handles multipart/form-data + optional logo upload
-router.patch("/:id/profile", uploadLogoMiddleware, updateVendorProfile);
+router.patch("/:id/profile", requireNotSuspended, uploadLogoMiddleware, updateVendorProfile);
 
 // Admin: suspend / reinstate
 router.patch("/:id/suspend",   suspendVendor);
