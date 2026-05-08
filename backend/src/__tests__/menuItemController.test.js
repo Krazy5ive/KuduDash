@@ -1,6 +1,8 @@
+//menuItemController.test.js
 const {
   getMenuItems,
   getMenuItemById,
+  getAllMenuItemsByVendor,
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
@@ -97,6 +99,53 @@ describe("MenuItem Controller", () => {
   });
 
   /* =======================
+     getAllMenuItemsByVendor
+  ======================= */
+  describe("getAllMenuItemsByVendor", () => {
+    it("returns all menu items (available and unavailable) for a vendor", async () => {
+      req.params = { vendorId: "vendor123" };
+      const items = [
+        { name: "Burger", isAvailable: true },
+        { name: "Sold Out Wrap", isAvailable: false },
+      ];
+
+      MenuItem.find.mockReturnValue({
+        sort: jest.fn().mockResolvedValue(items),
+      });
+
+      await getAllMenuItemsByVendor(req, res);
+
+      expect(MenuItem.find).toHaveBeenCalledWith({ vendor: "vendor123" });
+      expect(res.json).toHaveBeenCalledWith(items);
+    });
+
+    it("returns empty array if vendor has no menu items", async () => {
+      req.params = { vendorId: "vendor123" };
+
+      MenuItem.find.mockReturnValue({
+        sort: jest.fn().mockResolvedValue([]),
+      });
+
+      await getAllMenuItemsByVendor(req, res);
+
+      expect(res.json).toHaveBeenCalledWith([]);
+    });
+
+    it("returns 500 on database error", async () => {
+      req.params = { vendorId: "vendor123" };
+
+      MenuItem.find.mockReturnValue({
+        sort: jest.fn().mockRejectedValue(new Error("DB error")),
+      });
+
+      await getAllMenuItemsByVendor(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ message: "DB error" });
+    });
+  });
+
+  /* =======================
      createMenuItem
   ======================= */
   describe("createMenuItem", () => {
@@ -188,10 +237,9 @@ describe("MenuItem Controller", () => {
       expect(res.status).toHaveBeenCalledWith(409);
     });
 
-    // covers line 74 - findByIdAndUpdate returns null when no name in body
     it("returns 404 if item not found during update (no name in body)", async () => {
       req.params = { id: "item123" };
-      req.body = { price: 99 }; // no name, skips the findById/duplicate check
+      req.body = { price: 99 };
 
       MenuItem.findByIdAndUpdate.mockResolvedValue(null);
 
@@ -203,7 +251,7 @@ describe("MenuItem Controller", () => {
 
     it("returns 500 on database error", async () => {
       req.params = { id: "item123" };
-      req.body = { price: 99 }; // no name, goes straight to findByIdAndUpdate
+      req.body = { price: 99 };
       MenuItem.findByIdAndUpdate.mockRejectedValue(new Error("DB error"));
 
       await updateMenuItem(req, res);
@@ -228,7 +276,6 @@ describe("MenuItem Controller", () => {
       });
     });
 
-    // fix: req.params must be set so findByIdAndDelete returns null, not throws
     it("returns 404 if item not found", async () => {
       req.params = { id: "item123" };
 
