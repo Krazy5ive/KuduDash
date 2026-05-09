@@ -1,5 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
 name: Build and deploy Node.js app to Azure Web App - kududash-frontend1
 
 on:
@@ -28,7 +26,7 @@ jobs:
         with:
           node-version: '22.x'
 
-      - name: Install dependencies
+      - name: Install all dependencies
         working-directory: './frontend'
         run: npm install
 
@@ -45,6 +43,10 @@ jobs:
         working-directory: './frontend'
         run: npm run test -- --passWithNoTests
 
+      - name: Install production dependencies only
+        working-directory: './frontend'
+        run: npm install --production
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -54,6 +56,7 @@ jobs:
             ./frontend/server.js
             ./frontend/package.json
             ./frontend/package-lock.json
+            ./frontend/node_modules
 
   deploy:
     runs-on: ubuntu-latest
