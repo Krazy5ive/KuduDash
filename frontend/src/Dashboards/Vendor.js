@@ -304,8 +304,8 @@ const Vendor = () => {
               at this time. Please contact support if you believe this is a mistake.
             </p>
             <footer className="kd-form-footer" style={{ justifyContent: "center" }}>
-              <button className="kd-btn danger" onClick={() => logout({ returnTo: window.location.origin })}>
-                Sign out
+              <button className="kd-btn danger" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
+                Log out
               </button>
             </footer>
           </article>
