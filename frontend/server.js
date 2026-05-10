@@ -12,12 +12,10 @@ const PORT = process.env.PORT || 8080
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-app.use(express.static(path.join(__dirname, 'build')))
-
+// 1. Proxy FIRST — before static files and before the catch-all
 app.use('/api', createProxyMiddleware({
     target: process.env.BACKEND_URL || 'http://localhost:5000',
     changeOrigin: true,
-    pathRewrite: { '^/api': '/api' },
     proxyTimeout: 30000,
     timeout: 30000,
     on: {
@@ -28,11 +26,16 @@ app.use('/api', createProxyMiddleware({
     }
 }))
 
-app.get('/{*splat}', (req, res) => {
+// 2. Static files second
+app.use(express.static(path.join(__dirname, 'build')))
+
+// 3. Catch-all LAST — only for non-API routes
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'build', 'index.html'))
 })
 
 app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`)
+    console.log(`Proxying /api → ${process.env.BACKEND_URL || 'http://localhost:5000'}`)
     exec(`start http://localhost:${PORT}`)
 })

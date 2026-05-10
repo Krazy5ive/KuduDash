@@ -115,6 +115,26 @@ const reinstateVendor = async (req, res) => {
   }
 };
 
+const requireNotSuspended = async (req, res, next) => {
+  try {
+    const vendorId = req.params.id || req.query.vendor || req.body.vendor;
+    if (!vendorId) return next();
+
+    const vendor = await Vendor.findById(vendorId).select("status");
+    if (!vendor) return res.status(404).json({ message: "Vendor not found" });
+
+    if (vendor.status === "suspended") {
+      return res.status(403).json({
+        message: "Your account has been suspended. Please contact support.",
+      });
+    }
+
+    next();
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getAllVendors,
   getVendorById,
@@ -124,4 +144,5 @@ module.exports = {
   uploadLogoMiddleware,
   suspendVendor,
   reinstateVendor,
+  requireNotSuspended,
 };
