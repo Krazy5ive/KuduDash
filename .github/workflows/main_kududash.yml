@@ -30,6 +30,7 @@ jobs:
           node-version: '22.x'
 
       - name: npm install and test
+        working-directory: './backend'
         run: |
           npm install
           npm run test --if-present
