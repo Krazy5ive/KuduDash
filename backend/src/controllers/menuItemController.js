@@ -21,7 +21,7 @@ const getMenuItemById = async (req, res) => {
   }
 };
 
-// Admin: fetch ALL menu items for a vendor (available + unavailable)
+// Admin / vendor: fetch ALL menu items for a vendor (available + unavailable)
 const getAllMenuItemsByVendor = async (req, res) => {
   try {
     const items = await MenuItem.find({ vendor: req.params.vendorId }).sort({ category: 1, name: 1 });
@@ -88,6 +88,35 @@ const deleteMenuItem = async (req, res) => {
   }
 };
 
+// PATCH /api/menu-items/:id/sold-out
+// Flips isSoldOut. Suspension check is done here using req.vendor (set by attachVendor)
+// so we avoid requireNotSuspended's incorrect ID lookup on this route.
+const toggleSoldOut = async (req, res) => {
+  try {
+    // Suspension check using the vendor already attached to the request
+    if (req.vendor?.status === "suspended") {
+      return res.status(403).json({
+        message: "Your account has been suspended. Please contact support.",
+      });
+    }
+
+    const item = await MenuItem.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Menu item not found" });
+
+    // Make sure this item actually belongs to the requesting vendor
+    if (item.vendor.toString() !== req.vendor._id.toString()) {
+      return res.status(403).json({ message: "You do not own this menu item." });
+    }
+
+    item.isSoldOut = !item.isSoldOut;
+    await item.save();
+
+    res.json({ message: "Availability updated", isSoldOut: item.isSoldOut });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getMenuItems,
   getMenuItemById,
@@ -95,4 +124,5 @@ module.exports = {
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
+  toggleSoldOut,
 };

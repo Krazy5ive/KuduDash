@@ -23,18 +23,18 @@ const Vendor = () => {
   const location = useLocation();
   const vendorId = location.state?.vendorId || "";
 
-  const [expanded,       setExpanded]       = useState(false);
-  const [activeNav,      setActiveNav]      = useState("menu");
-  const [menuItems,      setMenuItems]      = useState([]);
-  const [vendorProfile,  setVendorProfile]  = useState(null);
+  const [expanded,        setExpanded]        = useState(false);
+  const [activeNav,       setActiveNav]        = useState("menu");
+  const [menuItems,       setMenuItems]        = useState([]);
+  const [vendorProfile,   setVendorProfile]    = useState(null);
 
-  const [modal,          setModal]          = useState(null);
-  const [formData,       setFormData]       = useState(EMPTY_FORM);
-  const [editingId,      setEditingId]      = useState(null);
-  const [pendingDeleteId,setPendingDeleteId]= useState(null);
-  const [formError,      setFormError]      = useState("");
+  const [modal,           setModal]            = useState(null);
+  const [formData,        setFormData]         = useState(EMPTY_FORM);
+  const [editingId,       setEditingId]        = useState(null);
+  const [pendingDeleteId, setPendingDeleteId]  = useState(null);
+  const [formError,       setFormError]        = useState("");
 
-   const [isSuspended, setIsSuspended] = useState(false);
+  const [isSuspended,     setIsSuspended]      = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -96,6 +96,25 @@ const Vendor = () => {
     }
     const updated = await res.json();
     setVendorProfile(updated);
+  };
+
+  // ── Sold-out toggle ──────────────────────────────────────────────────
+
+  const handleToggleSoldOut = async (item) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/api/menu-items/${item.id}/sold-out`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to update availability");
+      // Flip immediately in local state — no need to re-fetch the whole list
+      setMenuItems((prev) =>
+        prev.map((m) => m.id === item.id ? { ...m, isSoldOut: !m.isSoldOut } : m)
+      );
+    } catch (err) {
+      console.error("Error toggling sold out:", err);
+    }
   };
 
   // ── Menu modal helpers ───────────────────────────────────────────────
@@ -411,21 +430,38 @@ const Vendor = () => {
                 </li>
               )}
               {menuItems.map((item) => (
-                <li key={item.id} className="kd-item-card">
-                  {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.name} className="kd-item-image" />
-                  ) : (
-                    <figure className="kd-item-image-placeholder" aria-hidden="true">
-                      <svg viewBox="0 0 24 24"><path d="M4 16l4-4 4 4 4-6 4 6" /><rect x="3" y="3" width="18" height="18" rx="3" /></svg>
-                    </figure>
-                  )}
+                <li key={item.id} className={`kd-item-card ${item.isSoldOut ? "kd-item-card--sold-out" : ""}`}>
+
+                  {/* Image or placeholder — with sold-out overlay when applicable */}
+                  <div className="kd-item-image-wrap">
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.name} className="kd-item-image" />
+                    ) : (
+                      <figure className="kd-item-image-placeholder" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 16l4-4 4 4 4-6 4 6" /><rect x="3" y="3" width="18" height="18" rx="3" /></svg>
+                      </figure>
+                    )}
+                    {item.isSoldOut && (
+                      <span className="kd-sold-out-badge" aria-label="Sold out">Sold Out</span>
+                    )}
+                  </div>
+
                   <section className="kd-item-body">
                     <p className="kd-item-category">{item.category}</p>
                     <h3 className="kd-item-name">{item.name}</h3>
                     {item.description && <p className="kd-item-description">{item.description}</p>}
                     <p className="kd-item-price">R{Number(item.price).toFixed(2)}</p>
                   </section>
+
                   <footer className="kd-item-actions">
+                    {/* Sold-out toggle — leftmost, styled to reflect current state */}
+                    <button
+                      className={`kd-btn kd-btn--availability ${item.isSoldOut ? "kd-btn--mark-available" : "kd-btn--mark-soldout"}`}
+                      onClick={() => handleToggleSoldOut(item)}
+                      aria-label={item.isSoldOut ? `Mark ${item.name} as available` : `Mark ${item.name} as sold out`}
+                    >
+                      {item.isSoldOut ? "Available" : "Sold Out"}
+                    </button>
                     <button className="kd-btn ghost" onClick={() => openEditModal(item)} aria-label={`Edit ${item.name}`}>Edit</button>
                     <button className="kd-btn danger" onClick={() => openDeleteModal(item.id)} aria-label={`Delete ${item.name}`}>Delete</button>
                   </footer>
@@ -438,7 +474,7 @@ const Vendor = () => {
         {/* ORDERS PAGE */}
         {activeNav === "orders" && <OrderManagement />}
 
-        {/* REVIEWS PAGE — UAT 4 & 5 */}
+        {/* REVIEWS PAGE */}
         {activeNav === "reviews" && (
           vendorId
             ? <VendorReviews vendorId={vendorId} />

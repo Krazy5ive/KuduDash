@@ -97,7 +97,7 @@ const Student = () => {
     activeCategory === "All" ? menuItems : menuItems.filter((i) => i.category === activeCategory);
 
   const handleAddToCart = (item) => {
-    if (!selectedVendor) return;
+    if (!selectedVendor || item.isSoldOut) return;
     addToCart(item, selectedVendor._id, selectedVendor.businessName);
   };
 
@@ -269,11 +269,20 @@ const Student = () => {
                   !loadingMenu && filteredItems.length === 0
                     ? React.createElement("p", { className: "kd-state-msg" }, "No items in this category.")
                     : filteredItems.map((item) =>
-                        React.createElement("article", { key: item._id, className: "kd-menu-card" },
-                          React.createElement("figure", null,
+                        React.createElement("article", {
+                          key: item._id,
+                          // Dim the entire card when sold out so it's clear at a glance
+                          className: `kd-menu-card${item.isSoldOut ? " kd-menu-card--sold-out" : ""}`,
+                        },
+                          React.createElement("figure", { style: { position: "relative" } },
                             item.imageUrl && React.createElement("img", {
                               src: item.imageUrl, alt: item.name, className: "kd-menu-image", loading: "lazy",
-                            })
+                            }),
+                            // Sold-out badge sits over the image (only when sold out)
+                            item.isSoldOut && React.createElement("span", {
+                              className: "kd-sold-out-badge",
+                              "aria-label": "Sold out",
+                            }, "Sold Out")
                           ),
                           React.createElement("section", null,
                             React.createElement("h2", null, item.name),
@@ -283,10 +292,11 @@ const Student = () => {
                           React.createElement("footer", null,
                             React.createElement("data", { value: item.price }, `R${Number(item.price).toFixed(2)}`),
                             React.createElement("button", {
-                              className: "kd-btn",
+                              className: `kd-btn${item.isSoldOut ? " kd-btn--unavailable" : ""}`,
                               onClick: () => handleAddToCart(item),
-                              disabled: item.soldOut,
-                            }, item.soldOut ? "Sold Out" : "+ Add")
+                              disabled: item.isSoldOut,
+                              "aria-disabled": item.isSoldOut,
+                            }, item.isSoldOut ? "Unavailable" : "+ Add")
                           )
                         )
                       )
@@ -380,10 +390,10 @@ const Student = () => {
               )
         ),
 
-        // ── Orders page — now uses OrderTracking ──────────────────────
+        // ── Orders page ───────────────────────────────────────────────
         activeNav === "orders" && React.createElement(OrderTracking, {
           successOrders: orderSuccess,
-          ReviewFormComponent: ReviewForm,   // pass it down as a prop
+          ReviewFormComponent: ReviewForm,
         }),
 
         // ── Other pages ───────────────────────────────────────────────
