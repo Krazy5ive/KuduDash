@@ -30,4 +30,17 @@ router.post(  "/",           verifyToken, attachStudent, createOrder);
 router.get(   "/:id",        verifyToken, attachStudent, getOrderById);
 router.patch( "/:id/status", verifyToken, attachVendor,  updateOrderStatus);
 
+//all orders for admin
+router.get("/admin/all", verifyToken, attachAdmin, async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("vendor", "businessName")
+      .populate("student", "firstName lastName")
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;  

@@ -4,6 +4,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useLocation } from "react-router-dom";
 import ProfilePanel from "./ProfilePanel";
 import API_BASE_URL from '../api';
+import Analytics from "./Analytics";
 
 const initials = (name) =>
   name.split(" ").slice(0, 2).map((w) => w[0].toUpperCase()).join("");
@@ -1181,6 +1182,7 @@ const Admin = () => {
       case "vendors":  return <VendorsPage />;
       case "overview": return <OverviewPage />;
       case "appeals": return <AppealsPage />;
+      case "analytics": return <Analytics />;
       default:         return <PlaceholderPage label={NAV_ITEMS.find((n) => n.id === activeNav)?.label ?? activeNav} />;
     }
   };
