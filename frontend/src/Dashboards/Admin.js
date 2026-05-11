@@ -721,7 +721,7 @@ const OverviewPage = () => {
 
   return (
     <main aria-labelledby="overview-title">
-      <h1 id="overview-title" className="sr-only">Orders overview</h1>
+      <h1 id="overview-title" className="sr-only"></h1>
 
       {/* Date range filter */}
       <nav aria-label="Date range filter" style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
@@ -837,6 +837,287 @@ const OverviewPage = () => {
     );
 };
 
+const AppealsPage = () => {
+  const { getAccessTokenSilently } = useAuth0();
+  const [appeals,        setAppeals]        = useState([]);
+  const [loading,        setLoading]        = useState(true);
+  const [filterStatus,   setFilterStatus]   = useState("pending");
+  const [viewingAppeal,  setViewingAppeal]  = useState(null);
+  const [actionLoading,  setActionLoading]  = useState(null); // appealId being actioned
+
+  const getToken = () =>
+    getAccessTokenSilently({
+      authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
+    });
+
+  const fetchAppeals = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/api/appeals`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setAppeals(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch appeals:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [getAccessTokenSilently]);
+
+  useEffect(() => { fetchAppeals(); }, [fetchAppeals]);
+
+  // Accept = reinstate vendor + mark appeal reviewed
+  const handleAccept = async (appeal) => {
+    setActionLoading(appeal._id);
+    try {
+      const token = await getToken();
+      await fetch(`${API_BASE_URL}/api/vendors/${appeal.vendor._id}/reinstate`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      await fetch(`${API_BASE_URL}/api/appeals/${appeal._id}/review`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAppeals((prev) =>
+        prev.map((a) => a._id === appeal._id ? { ...a, status: "reviewed" } : a)
+      );
+      setViewingAppeal(null);
+    } catch (err) {
+      console.error("Failed to accept appeal:", err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Reject = mark appeal reviewed, vendor stays suspended
+  const handleReject = async (appeal) => {
+    setActionLoading(appeal._id);
+    try {
+      const token = await getToken();
+      await fetch(`${API_BASE_URL}/api/appeals/${appeal._id}/review`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAppeals((prev) =>
+        prev.map((a) => a._id === appeal._id ? { ...a, status: "reviewed" } : a)
+      );
+      setViewingAppeal(null);
+    } catch (err) {
+      console.error("Failed to reject appeal:", err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const filtered = useMemo(() =>
+    filterStatus === "all" ? appeals : appeals.filter((a) => a.status === filterStatus),
+    [appeals, filterStatus]
+  );
+
+  const pendingCount = appeals.filter((a) => a.status === "pending").length;
+
+  return (
+    <section aria-label="Appeals management">
+
+      {/* Stats */}
+      <section className="kd-stats-row" aria-label="Appeal statistics">
+        <article className="kd-stat-card">
+          <p className="kd-stat-label">Total appeals</p>
+          <p className="kd-stat-value">{appeals.length}</p>
+        </article>
+        <article className="kd-stat-card">
+          <p className="kd-stat-label">Pending review</p>
+          <p className="kd-stat-value" style={{ color: "var(--kd-amber)" }}>{pendingCount}</p>
+        </article>
+        <article className="kd-stat-card">
+          <p className="kd-stat-label">Reviewed</p>
+          <p className="kd-stat-value green">{appeals.filter((a) => a.status === "reviewed").length}</p>
+        </article>
+      </section>
+
+      {/* Filter */}
+      <form className="kd-search-row" role="search" onSubmit={(e) => e.preventDefault()}>
+        <ul className="kd-filter-list">
+          {["all", "pending", "reviewed"].map((f) => (
+            <li key={f}>
+              <button
+                type="button"
+                className={`kd-filter-pill ${filterStatus === f ? "active" : ""}`}
+                onClick={() => setFilterStatus(f)}
+              >
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+                {f === "pending" && pendingCount > 0 && (
+                  <span style={{
+                    marginLeft: 6, background: "var(--kd-amber)",
+                    color: "#000", borderRadius: "999px",
+                    padding: "0 6px", fontSize: "11px", fontWeight: 600,
+                  }}>
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </form>
+
+      {/* Table */}
+      <section className="kd-table-wrap">
+        <table className="kd-table">
+          <thead>
+            <tr>
+              <th>Vendor</th>
+              <th>Email</th>
+              <th>Suspension reason</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && (
+              <tr><td colSpan={6}><p className="kd-empty-state">Loading appeals…</p></td></tr>
+            )}
+            {!loading && filtered.length === 0 && (
+              <tr><td colSpan={6}><p className="kd-empty-state">No appeals found.</p></td></tr>
+            )}
+            {filtered.map((appeal) => (
+              <tr key={appeal._id}>
+                <td>
+                  <figure className="kd-cell-name">
+                    <p className="kd-cell-avatar purple" aria-hidden="true">
+                      {initials(appeal.vendor?.businessName || "?")}
+                    </p>
+                    <figcaption className="kd-cell-name-text">
+                      <strong>{appeal.vendor?.businessName || "—"}</strong>
+                    </figcaption>
+                  </figure>
+                </td>
+                <td>{appeal.vendor?.email || "—"}</td>
+                <td style={{ maxWidth: 180, color: "var(--color-text-secondary)", fontSize: 13 }}>
+                  {appeal.vendor?.statusReason || "—"}
+                </td>
+                <td>{formatDate(appeal.createdAt)}</td>
+                <td>
+                  <small className={`kd-badge ${appeal.status === "pending" ? "pending" : "active"}`}>
+                    {appeal.status}
+                  </small>
+                </td>
+                <td>
+                  <section className="kd-table-actions">
+                    <button
+                      className="kd-action-btn view"
+                      onClick={() => setViewingAppeal(appeal)}
+                    >
+                      View
+                    </button>
+                    {appeal.status === "pending" && (
+                      <>
+                        <button
+                          className="kd-action-btn restore"
+                          disabled={actionLoading === appeal._id}
+                          onClick={() => handleAccept(appeal)}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          className="kd-action-btn suspend"
+                          disabled={actionLoading === appeal._id}
+                          onClick={() => handleReject(appeal)}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </section>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      {/* Appeal detail modal */}
+      {viewingAppeal && (
+        <section className="kd-modal-overlay" role="dialog" aria-modal="true"
+          onClick={(e) => { if (e.target === e.currentTarget) setViewingAppeal(null); }}>
+          <article className="kd-modal">
+            <header><h2 className="kd-modal-title">Appeal details</h2></header>
+
+            <figure className="kd-cell-name" style={{ marginBottom: 4 }}>
+              <p className="kd-cell-avatar purple" aria-hidden="true">
+                {initials(viewingAppeal.vendor?.businessName || "?")}
+              </p>
+              <figcaption className="kd-cell-name-text">
+                <strong>{viewingAppeal.vendor?.businessName}</strong>
+                <small className="kd-cell-subtext">{viewingAppeal.vendor?.email}</small>
+              </figcaption>
+            </figure>
+
+            <ul className="kd-detail-list">
+              {[
+                ["Submitted",         formatDate(viewingAppeal.createdAt)],
+                ["Appeal status",     viewingAppeal.status],
+                ["Vendor status",     viewingAppeal.vendor?.status],
+                ["Suspension reason", viewingAppeal.vendor?.statusReason || "—"],
+              ].map(([label, value]) => (
+                <li className="kd-detail-row" key={label}>
+                  <p className="kd-detail-label">{label}</p>
+                  <p className="kd-detail-value">
+                    {label.includes("status")
+                      ? <small className={`kd-badge ${value}`}>{value}</small>
+                      : value}
+                  </p>
+                </li>
+              ))}
+            </ul>
+
+            <section style={{ margin: "16px 0" }}>
+              <p className="kd-detail-label" style={{ marginBottom: 6 }}>Vendor's message</p>
+              <p style={{
+                fontSize: 13, lineHeight: 1.6,
+                background: "var(--color-background-secondary)",
+                borderRadius: 8, padding: "12px 14px",
+                color: "var(--color-text-primary)",
+                whiteSpace: "pre-wrap",
+              }}>
+                {viewingAppeal.message}
+              </p>
+            </section>
+
+            <footer className="kd-modal-footer">
+              <button className="kd-btn ghost" onClick={() => setViewingAppeal(null)}>
+                Close
+              </button>
+              {viewingAppeal.status === "pending" && (
+                <>
+                  <button
+                    className="kd-btn danger"
+                    disabled={actionLoading === viewingAppeal._id}
+                    onClick={() => handleReject(viewingAppeal)}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    className="kd-btn primary"
+                    disabled={actionLoading === viewingAppeal._id}
+                    onClick={() => handleAccept(viewingAppeal)}
+                  >
+                    Accept & reinstate
+                  </button>
+                </>
+              )}
+            </footer>
+          </article>
+        </section>
+      )}
+    </section>
+  );
+};
+
 const PlaceholderPage = ({ label }) => (
   <section aria-label={`${label} placeholder`} className="kd-placeholder">
     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M9 9h6M9 13h4" /></svg>
@@ -849,6 +1130,7 @@ const NAV_ITEMS = [
   { id: "overview",  label: "Overview",  icon: <><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /></> },
   { id: "students",  label: "Students",  icon: <><path d="M12 3L2 8l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></> },
   { id: "vendors",   label: "Vendors",   icon: <path d="M3 9l9-6 9 6v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /> },
+  { id: "appeals",   label: "Appeals",   icon: <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /> },
   { id: "orders",    label: "Orders",    icon: <path d="M6 2h12v20H6zM6 6h12" /> },
   { id: "analytics", label: "Analytics", icon: <path d="M4 20V10M9 20V4M14 20v-6M19 20v-9" /> },
   { id: "reports",   label: "Reports",   icon: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6M9 13h6M9 17h4" /></> },
@@ -859,6 +1141,7 @@ const PAGE_SUBTITLES = {
   overview: "Platform at a glance", students: "Manage registered students",
   vendors: "Manage registered vendors", orders: "View and manage all orders",
   analytics: "Platform usage and trends", reports: "Generated reports", settings: "System configuration",
+  appeals: "Review and action vendor suspension appeals",
 };
 
 // ── Main Admin component ─────────────────────────────────────────────
@@ -897,6 +1180,7 @@ const Admin = () => {
       case "students": return <StudentsPage />;
       case "vendors":  return <VendorsPage />;
       case "overview": return <OverviewPage />;
+      case "appeals": return <AppealsPage />;
       default:         return <PlaceholderPage label={NAV_ITEMS.find((n) => n.id === activeNav)?.label ?? activeNav} />;
     }
   };
