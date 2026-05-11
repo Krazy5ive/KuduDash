@@ -36,12 +36,17 @@ const Vendor = () => {
 
   const [isSuspended,     setIsSuspended]      = useState(false);
 
+  const [appealMessage, setAppealMessage] = useState("");
+  const [appealState,   setAppealState]   = useState("idle");
+  const [appealError,   setAppealError]   = useState("");
+
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchMenuItems();
-    fetchVendorProfile();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchVendorProfile().then((suspended) => {
+      if (suspended) fetchExistingAppeal();
+    });
   }, []);
 
   const getToken = () =>
@@ -61,7 +66,10 @@ const Vendor = () => {
       if (!res.ok) throw new Error("Failed to fetch vendor profile");
       const data = await res.json();
       setVendorProfile(data);
-      if (data.status === "suspended") setIsSuspended(true);
+      if (data.status === "suspended"){
+        setIsSuspended(true);
+        return true;
+      } 
     } catch (err) {
       console.error("Error fetching vendor profile:", err);
     }
@@ -78,6 +86,21 @@ const Vendor = () => {
       setMenuItems(data.map((item) => ({ ...item, id: item._id })));
     } catch (err) {
       console.error("Error fetching menu items:", err);
+    }
+  };
+
+  const fetchExistingAppeal = async () => {
+    if (!vendorId) return;
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/api/appeals/vendor/${vendorId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.status === "pending") setAppealState("duplicate");
+    } catch (err) {
+      console.error("Error checking existing appeal:", err);
     }
   };
 
@@ -235,6 +258,33 @@ const Vendor = () => {
 
   const pendingDeleteItem = menuItems.find((item) => item.id === pendingDeleteId);
 
+  // ── submitting appeal ───────────────────────────────────────────────
+  const handleSubmitAppeal = async () => {
+    if (!appealMessage.trim()) return;
+    setAppealState("pending");
+    setAppealError("");
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/api/appeals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ vendorId, message: appealMessage }),
+      });
+      if (res.status === 409) { setAppealState("duplicate"); return; }
+      if (!res.ok) {
+        const data = await res.json();
+        setAppealError(data.message || "Something went wrong. Please try again.");
+        setAppealState("idle");
+        return;
+      }
+      setAppealState("submitted");
+    } catch (err) {
+      console.error("Appeal submission error:", err);
+      setAppealError("Something went wrong. Please try again.");
+      setAppealState("idle");
+    }
+  };
+
   /* ── Shared form markup ── */
   const renderForm = (onSubmit) => (
     <form className="kd-form" onSubmit={onSubmit} noValidate>
@@ -316,17 +366,156 @@ const Vendor = () => {
           aria-labelledby="suspended-title"
           style={{ zIndex: 9999 }}
         >
-          <article className="kd-modal" style={{ textAlign: "center", maxWidth: 420 }}>
-            <h2 className="kd-modal-title" id="suspended-title">Account suspended</h2>
-            <p className="kd-confirm-text">
-              Your vendor account has been suspended. You cannot access the dashboard
-              at this time. Please contact support if you believe this is a mistake.
-            </p>
-            <footer className="kd-form-footer" style={{ justifyContent: "center" }}>
-              <button className="kd-btn danger" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
-                Log out
-              </button>
-            </footer>
+          <article className="kd-modal" style={{ maxWidth: 480, padding: "36px 40px" }}>
+
+            {/* Icon */}
+            <section style={{
+              width: 48, height: 48, borderRadius: "50%",
+              background: "var(--color-background-danger, rgba(239,68,68,0.12))",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 20px",
+            }}>
+              <svg viewBox="0 0 24 24" width={22} height={22} fill="none"
+                stroke="var(--kd-red, #ef4444)" strokeWidth={2} strokeLinecap="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v4M12 16h.01" />
+              </svg>
+            </section>
+
+            {/* Title */}
+            <h2 className="kd-modal-title" id="suspended-title"
+              style={{ textAlign: "center", marginBottom: 3}}>
+              Account suspended
+            </h2>
+
+            {/* Reason badge */}
+            {vendorProfile?.statusReason && (
+              <p style={{
+                textAlign: "center", fontSize: 13,
+                color: "var(--color-text-secondary)",
+                marginBottom: 3,
+              }}>
+                Reason: <strong style={{ color: "var(--color-text-primary)" }}>
+                  {vendorProfile.statusReason}
+                </strong>
+              </p>
+            )}
+
+            <hr style={{ border: "none", borderTop: "1px solid var(--color-border-secondary)", marginBottom: 4 }} />
+
+            {/* idle — show form */}
+            {appealState === "idle" && (
+              <>
+                <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
+                  If you believe this suspension is a mistake, you can submit an appeal below.
+                  Our team will review it and get back to you.
+                </p>
+
+                <section style={{ marginBottom: 12 }}>
+                  <label style={{
+                    display: "block", fontSize: 12, fontWeight: 600,
+                    color: "var(--color-text-secondary)",
+                    textTransform: "uppercase", letterSpacing: "0.05em",
+                    marginBottom: 8,
+                  }}>
+                    Your appeal message
+                  </label>
+                  <textarea
+                    className="kd-textarea"
+                    placeholder="Explain why you believe this suspension should be reversed…"
+                    value={appealMessage}
+                    onChange={(e) => setAppealMessage(e.target.value)}
+                    maxLength={1000}
+                    rows={5}
+                  />
+                  <p style={{
+                    fontSize: 11, color: "var(--color-text-secondary)",
+                    textAlign: "right", marginTop: 4,
+                  }}>
+                    {appealMessage.length}/1000
+                  </p>
+                </section>
+
+                {appealError && (
+                  <p className="kd-form-error" role="alert" style={{ marginBottom: 16 }}>
+                    {appealError}
+                  </p>
+                )}
+
+                <footer style={{
+                  display: "flex", flexDirection: "column", gap: 10, marginTop: 8,
+                }}>
+                  <button
+                    className="kd-btn primary"
+                    onClick={handleSubmitAppeal}
+                    disabled={!appealMessage.trim()}
+                    style={{ width: "100%" }}
+                  >
+                    Submit appeal
+                  </button>
+                  <button
+                    className="kd-btn ghost"
+                    onClick={() => logout({ returnTo: window.location.origin })}
+                    style={{ width: "100%" }}
+                  >
+                    Sign out
+                  </button>
+                </footer>
+              </>
+            )}
+
+            {/* pending — submitting */}
+            {appealState === "pending" && (
+              <p style={{ textAlign: "center", fontSize: 13, color: "var(--color-text-secondary)" }}>
+                Submitting your appeal…
+              </p>
+            )}
+
+            {/* submitted — success */}
+            {appealState === "submitted" && (
+              <>
+                <section style={{
+                  background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)",
+                  borderRadius: 10, padding: "16px 18px", marginBottom: 24, textAlign: "center",
+                }}>
+                  <p style={{ fontSize: 20, marginBottom: 6 }}>✓</p>
+                  <p style={{ fontSize: 13, color: "var(--color-text-primary)", lineHeight: 1.6 }}>
+                    Your appeal has been submitted. Check your email for a confirmation.
+                    Our team will be in touch soon.
+                  </p>
+                </section>
+                <button
+                  className="kd-btn ghost"
+                  onClick={() => logout({ returnTo: window.location.origin })}
+                  style={{ width: "100%" }}
+                >
+                  Sign out
+                </button>
+              </>
+            )}
+
+            {/* duplicate — already pending */}
+            {appealState === "duplicate" && (
+              <>
+                <section style={{
+                  background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.2)",
+                  borderRadius: 10, padding: "16px 18px", marginBottom: 24, textAlign: "center",
+                }}>
+                  <p style={{ fontSize: 20, marginBottom: 6 }}>⏳</p>
+                  <p style={{ fontSize: 13, color: "var(--color-text-primary)", lineHeight: 1.6 }}>
+                    You already have a pending appeal. Our team will review it and get back to you shortly.
+                  </p>
+                </section>
+                <button
+                  className="kd-btn ghost"
+                  onClick={() => logout({ returnTo: window.location.origin })}
+                  style={{ width: "100%" }}
+                >
+                  Sign out
+                </button>
+              </>
+            )}
+
           </article>
         </section>
       )}

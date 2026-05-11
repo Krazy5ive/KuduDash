@@ -649,3 +649,29 @@ button {
   color: #e2e8f0;
   font-weight: 600;
 }
+
+
+.kd-textarea {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(110, 231, 183, 0.15);
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 12px 14px;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  outline: none;
+}
+
+.kd-textarea::placeholder {
+  color: #475569;
+}
+
+.kd-textarea:focus {
+  border-color: rgba(110, 231, 183, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
