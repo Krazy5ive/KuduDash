@@ -722,120 +722,121 @@ const OverviewPage = () => {
 
   return (
     <main aria-labelledby="overview-title">
-      <h1 id="overview-title" className="sr-only"></h1>
+      {/* Fix: give the sr-only heading actual content */}
+      <h1 id="overview-title" className="sr-only">Overview</h1>
 
       {/* Date range filter */}
       <nav aria-label="Date range filter" style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-          {[
-            { label: "Today",      value: "today" },
-            { label: "This week",  value: "week"  },
-            { label: "This month", value: "month" },
-            { label: "All time",   value: "all"   },
-          ].map(({ label, value }) => (
-            <button key={value} type="button" className={`kd-filter-pill ${dateRange === value ? "active" : ""}`}
-              onClick={() => { setDateRange(value); setPage(1); }}>
-              {label}
-            </button>
-          ))}
-        </nav>
-        
-        {/* Stats */}
-        <section className="kd-stats-row" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
-          <article className="kd-stat-card">
-            <p className="kd-stat-label">Total orders</p>
-            <p className="kd-stat-value">{counts.total}</p>
-            {todaysCounts.total > 0 && <p className="kd-stat-trend">↑ {todaysCounts.total} today</p>}
-          </article>
-          <article className="kd-stat-card">
-            <p className="kd-stat-label">Total amount</p>
-            <p className="kd-stat-value green">{counts.totalAmount.toFixed(2)}</p>
-            {todaysCounts.totalAmount > 0 && <p className="kd-stat-trend">↑ R{todaysCounts.totalAmount.toFixed(2)} today</p>}
-          </article>
-        </section>
-        
-        {/* Refresh */}
-         <header style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
-          <button onClick={fetchOrders} className="kd-btn ghost" style={{ fontSize: "12px" }}>
-            ↻ Refresh {lastUpdated && `(Updated: ${lastUpdated.toLocaleTimeString()})`}
+        {[
+          { label: "Today",      value: "today" },
+          { label: "This week",  value: "week"  },
+          { label: "This month", value: "month" },
+          { label: "All time",   value: "all"   },
+        ].map(({ label, value }) => (
+          <button key={value} type="button" className={`kd-filter-pill ${dateRange === value ? "active" : ""}`}
+            onClick={() => { setDateRange(value); setPage(1); }}>
+            {label}
           </button>
-        </header>
+        ))}
+      </nav>
 
-        <section className="kd-overview-row">
-          {/* Orders table */}
-          <main>
-            <nav aria-label="Order status filter" className="kd-search-row">
-              <ul className="kd-filter-list">
-                {STATUS_FILTERS.map((f) => (
-                  <li key={f}>
-                    <button type="button" className={`kd-filter-pill ${filterStatus === f ? "active" : ""}`}
-                      onClick={() => handleFilterChange(f)}>
-                      {f.charAt(0).toUpperCase() + f.slice(1)}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+      {/* Stats */}
+      <section className="kd-stats-row" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+        <article className="kd-stat-card">
+          <p className="kd-stat-label">Total orders</p>
+          <p className="kd-stat-value">{counts.total}</p>
+          {todaysCounts.total > 0 && <p className="kd-stat-trend">↑ {todaysCounts.total} today</p>}
+        </article>
+        <article className="kd-stat-card">
+          <p className="kd-stat-label">Total amount</p>
+          <p className="kd-stat-value green">{counts.totalAmount.toFixed(2)}</p>
+          {todaysCounts.totalAmount > 0 && <p className="kd-stat-trend">↑ R{todaysCounts.totalAmount.toFixed(2)} today</p>}
+        </article>
+      </section>
 
-            <section className="kd-table-wrap">
-              <table className="kd-table">
-                <thead>
-                  <tr><th>Order ID</th><th>Student</th><th>Vendor</th><th>Total</th><th>Status</th><th>Date</th></tr>
-                </thead>
-                <tbody>
-                  {loading && <tr><td colSpan={6}><p className="kd-empty-state">Loading orders...</p></td></tr>}
-                  {!loading && filtered.length === 0 && <tr><td colSpan={6}><p className="kd-empty-state">No orders found.</p></td></tr>}
-                  {paginated.map((order) => (
-                    <tr key={order._id}>
-                      <td>#{order._id.slice(-6).toUpperCase()}</td>
-                      <td>{order.student ? `${order.student.firstName} ${order.student.lastName}` : "—"}</td>
-                      <td>{order.vendorName ?? order.vendor?.businessName ?? "—"}</td>
-                      <td>R{Number(order.totalAmount || order.total).toFixed(2)}</td>
-                      <td><small className={`kd-badge ${order.status}`}>{order.status}</small></td>
-                      <td>{formatDate(order.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-            
-             {/* Pagination */}
-             <nav aria-label="Pagination" style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "1rem" }}>
-              <button className="kd-btn ghost" onClick={() => setPage((p) => p - 1)} disabled={page === 1}>← Prev</button>
-              <span style={{ fontSize: "13px", color: "var(--color-text-secondary)" }}>Page {page} of {totalPages}</span>
-              <button className="kd-btn ghost" onClick={() => setPage((p) => p + 1)} disabled={page === totalPages}>Next →</button>
-            </nav>
-          </main>
-          
-          {/* Sidebar */}
-          <aside className="kd-overview-sidebar">
-            <p className="kd-sidebar-title">Orders by status</p>
-            {[
-              { label: "Collected", key: "collected", color: "var(--kd-green)" },
-              { label: "Pending",   key: "pending",   color: "var(--kd-amber)" },
-              { label: "Received",  key: "received",  color: "var(--kd-amber)" },
-              { label: "Paid",      key: "paid",      color: "var(--kd-amber)" },
-              { label: "Preparing", key: "preparing", color: "var(--kd-amber)" },
-              { label: "Ready",     key: "ready",     color: "var(--kd-green)" },
-              { label: "Cancelled", key: "cancelled", color: "var(--kd-red)"   },
-            ].map(({ label, key, color }) => (
-              <section className="kd-bar-row" key={key}>
-                <section className="kd-bar-label"><span>{label}</span><span>{counts[key]}</span></section>
-                <section className="kd-bar-track">
-                  <span className="kd-bar-fill" style={{ width: `${barPct(counts[key])}%`, background: color }} />
-                </section>
-              </section>
-            ))}
+      {/* Refresh */}
+      <header style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
+        <button onClick={fetchOrders} className="kd-btn ghost" style={{ fontSize: "12px" }}>
+          ↻ Refresh {lastUpdated && `(Updated: ${lastUpdated.toLocaleTimeString()})`}
+        </button>
+      </header>
 
-            <hr className="kd-overview-divider" />
-            <h2 className="kd-sidebar-title">Platform summary</h2>
-            <ul className="kd-summary-list">
-              <li><span>Active students</span><strong>{students.filter((s) => s.isActive).length}</strong></li>
-              <li><span>Active vendors</span><strong>{vendors.filter((v) => v.status === "active").length}</strong></li>
+      <section className="kd-overview-row">
+        {/* Orders table */}
+        <main>
+          <nav aria-label="Order status filter" className="kd-search-row">
+            <ul className="kd-filter-list">
+              {STATUS_FILTERS.map((f) => (
+                <li key={f}>
+                  <button type="button" className={`kd-filter-pill ${filterStatus === f ? "active" : ""}`}
+                    onClick={() => handleFilterChange(f)}>
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                </li>
+              ))}
             </ul>
-          </aside>
-        </section>
-      </main>
-    );
+          </nav>
+
+          <section className="kd-table-wrap">
+            <table className="kd-table">
+              <thead>
+                <tr><th>Order ID</th><th>Student</th><th>Vendor</th><th>Total</th><th>Status</th><th>Date</th></tr>
+              </thead>
+              <tbody>
+                {loading && <tr><td colSpan={6}><p className="kd-empty-state">Loading orders...</p></td></tr>}
+                {!loading && filtered.length === 0 && <tr><td colSpan={6}><p className="kd-empty-state">No orders found.</p></td></tr>}
+                {paginated.map((order) => (
+                  <tr key={order._id}>
+                    <td>#{order._id.slice(-6).toUpperCase()}</td>
+                    <td>{order.student ? `${order.student.firstName} ${order.student.lastName}` : "—"}</td>
+                    <td>{order.vendorName ?? order.vendor?.businessName ?? "—"}</td>
+                    <td>R{Number(order.totalAmount || order.total).toFixed(2)}</td>
+                    <td><small className={`kd-badge ${order.status}`}>{order.status}</small></td>
+                    <td>{formatDate(order.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          {/* Pagination */}
+          <nav aria-label="Pagination" style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "1rem" }}>
+            <button className="kd-btn ghost" onClick={() => setPage((p) => p - 1)} disabled={page === 1}>← Prev</button>
+            <span style={{ fontSize: "13px", color: "var(--color-text-secondary)" }}>Page {page} of {totalPages}</span>
+            <button className="kd-btn ghost" onClick={() => setPage((p) => p + 1)} disabled={page === totalPages}>Next →</button>
+          </nav>
+        </main>
+
+        {/* Sidebar */}
+        <aside className="kd-overview-sidebar">
+          <p className="kd-sidebar-title">Orders by status</p>
+          {[
+            { label: "Collected", key: "collected", color: "var(--kd-green)" },
+            { label: "Pending",   key: "pending",   color: "var(--kd-amber)" },
+            { label: "Received",  key: "received",  color: "var(--kd-amber)" },
+            { label: "Paid",      key: "paid",      color: "var(--kd-amber)" },
+            { label: "Preparing", key: "preparing", color: "var(--kd-amber)" },
+            { label: "Ready",     key: "ready",     color: "var(--kd-green)" },
+            { label: "Cancelled", key: "cancelled", color: "var(--kd-red)"   },
+          ].map(({ label, key, color }) => (
+            <section className="kd-bar-row" key={key}>
+              <section className="kd-bar-label"><span>{label}</span><span>{counts[key]}</span></section>
+              <section className="kd-bar-track">
+                <span className="kd-bar-fill" style={{ width: `${barPct(counts[key])}%`, background: color }} />
+              </section>
+            </section>
+          ))}
+
+          <hr className="kd-overview-divider" />
+          <h2 className="kd-sidebar-title">Platform summary</h2>
+          <ul className="kd-summary-list">
+            <li><span>Active students</span><strong>{students.filter((s) => s.isActive).length}</strong></li>
+            <li><span>Active vendors</span><strong>{vendors.filter((v) => v.status === "active").length}</strong></li>
+          </ul>
+        </aside>
+      </section>
+    </main>
+  );
 };
 
 const AppealsPage = () => {
@@ -844,12 +845,15 @@ const AppealsPage = () => {
   const [loading,        setLoading]        = useState(true);
   const [filterStatus,   setFilterStatus]   = useState("pending");
   const [viewingAppeal,  setViewingAppeal]  = useState(null);
-  const [actionLoading,  setActionLoading]  = useState(null); // appealId being actioned
+  const [actionLoading,  setActionLoading]  = useState(null);
 
-  const getToken = () =>
-    getAccessTokenSilently({
+  // Fix: wrap getToken in useCallback so it's a stable reference
+  const getToken = useCallback(
+    () => getAccessTokenSilently({
       authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
-    });
+    }),
+    [getAccessTokenSilently]
+  );
 
   const fetchAppeals = useCallback(async () => {
     setLoading(true);
@@ -865,11 +869,10 @@ const AppealsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [getAccessTokenSilently]);
+  }, [getToken]);
 
   useEffect(() => { fetchAppeals(); }, [fetchAppeals]);
 
-  // Accept = reinstate vendor + mark appeal reviewed
   const handleAccept = async (appeal) => {
     setActionLoading(appeal._id);
     try {
@@ -893,7 +896,6 @@ const AppealsPage = () => {
     }
   };
 
-  // Reject = mark appeal reviewed, vendor stays suspended
   const handleReject = async (appeal) => {
     setActionLoading(appeal._id);
     try {
@@ -923,7 +925,6 @@ const AppealsPage = () => {
   return (
     <section aria-label="Appeals management">
 
-      {/* Stats */}
       <section className="kd-stats-row" aria-label="Appeal statistics">
         <article className="kd-stat-card">
           <p className="kd-stat-label">Total appeals</p>
@@ -939,7 +940,6 @@ const AppealsPage = () => {
         </article>
       </section>
 
-      {/* Filter */}
       <form className="kd-search-row" role="search" onSubmit={(e) => e.preventDefault()}>
         <ul className="kd-filter-list">
           {["all", "pending", "reviewed"].map((f) => (
@@ -965,7 +965,6 @@ const AppealsPage = () => {
         </ul>
       </form>
 
-      {/* Table */}
       <section className="kd-table-wrap">
         <table className="kd-table">
           <thead>
@@ -1041,7 +1040,6 @@ const AppealsPage = () => {
         </table>
       </section>
 
-      {/* Appeal detail modal */}
       {viewingAppeal && (
         <section className="kd-modal-overlay" role="dialog" aria-modal="true"
           onClick={(e) => { if (e.target === e.currentTarget) setViewingAppeal(null); }}>
@@ -1178,12 +1176,12 @@ const Admin = () => {
 
   const renderPage = () => {
     switch (activeNav) {
-      case "students": return <StudentsPage />;
-      case "vendors":  return <VendorsPage />;
-      case "overview": return <OverviewPage />;
-      case "appeals": return <AppealsPage />;
+      case "students":  return <StudentsPage />;
+      case "vendors":   return <VendorsPage />;
+      case "overview":  return <OverviewPage />;
+      case "appeals":   return <AppealsPage />;
       case "analytics": return <Analytics />;
-      default:         return <PlaceholderPage label={NAV_ITEMS.find((n) => n.id === activeNav)?.label ?? activeNav} />;
+      default:          return <PlaceholderPage label={NAV_ITEMS.find((n) => n.id === activeNav)?.label ?? activeNav} />;
     }
   };
 
