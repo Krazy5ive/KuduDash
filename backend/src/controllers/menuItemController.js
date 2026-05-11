@@ -2,6 +2,17 @@
 const MenuItem = require("../models/MenuItem");
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// Reusable suspension check — uses req.vendor set by attachVendor
+const checkNotSuspended = (req, res) => {
+  if (req.vendor?.status === "suspended") {
+    res.status(403).json({
+      message: "Your account has been suspended. Please contact support.",
+    });
+    return true; // suspended
+  }
+  return false; // not suspended, continue
+};
+
 const getMenuItems = async (req, res) => {
   try {
     const items = await MenuItem.find({ vendor: req.query.vendor, isAvailable: true });
@@ -32,6 +43,7 @@ const getAllMenuItemsByVendor = async (req, res) => {
 };
 
 const createMenuItem = async (req, res) => {
+  if (checkNotSuspended(req, res)) return;
   try {
     const { vendor, name } = req.body;
     const duplicate = await MenuItem.findOne({
@@ -53,6 +65,7 @@ const createMenuItem = async (req, res) => {
 };
 
 const updateMenuItem = async (req, res) => {
+  if (checkNotSuspended(req, res)) return;
   try {
     const { name } = req.body;
     if (name) {
@@ -79,6 +92,7 @@ const updateMenuItem = async (req, res) => {
 };
 
 const deleteMenuItem = async (req, res) => {
+  if (checkNotSuspended(req, res)) return;
   try {
     const item = await MenuItem.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ message: "Menu item not found" });
@@ -89,21 +103,12 @@ const deleteMenuItem = async (req, res) => {
 };
 
 // PATCH /api/menu-items/:id/sold-out
-// Flips isSoldOut. Suspension check is done here using req.vendor (set by attachVendor)
-// so we avoid requireNotSuspended's incorrect ID lookup on this route.
 const toggleSoldOut = async (req, res) => {
+  if (checkNotSuspended(req, res)) return;
   try {
-    // Suspension check using the vendor already attached to the request
-    if (req.vendor?.status === "suspended") {
-      return res.status(403).json({
-        message: "Your account has been suspended. Please contact support.",
-      });
-    }
-
     const item = await MenuItem.findById(req.params.id);
     if (!item) return res.status(404).json({ message: "Menu item not found" });
 
-    // Make sure this item actually belongs to the requesting vendor
     if (item.vendor.toString() !== req.vendor._id.toString()) {
       return res.status(403).json({ message: "You do not own this menu item." });
     }

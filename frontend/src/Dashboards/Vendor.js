@@ -10,12 +10,41 @@ import API_BASE_URL from '../api';
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
+// FALCPA / SA R638 Big 9 allergens
+const ALLERGENS = [
+  "milk", "eggs", "fish", "shellfish",
+  "tree nuts", "peanuts", "wheat", "soy", "sesame",
+];
+
+const DIETARY_TAGS = ["halal", "vegetarian", "vegan", "dairy-free"];
+
+// Colour map for allergen badges on the card
+const ALLERGEN_COLOURS = {
+  milk:         { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  text: "#fbbf24" },
+  eggs:         { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  text: "#fbbf24" },
+  fish:         { bg: "rgba(99,102,241,0.12)",  border: "rgba(99,102,241,0.3)",  text: "#818cf8" },
+  shellfish:    { bg: "rgba(99,102,241,0.12)",  border: "rgba(99,102,241,0.3)",  text: "#818cf8" },
+  "tree nuts":  { bg: "rgba(234,179,8,0.12)",   border: "rgba(234,179,8,0.3)",   text: "#ca8a04" },
+  peanuts:      { bg: "rgba(234,179,8,0.12)",   border: "rgba(234,179,8,0.3)",   text: "#ca8a04" },
+  wheat:        { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.3)",  text: "#fb923c" },
+  soy:          { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.3)",  text: "#fb923c" },
+  sesame:       { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.3)",   text: "#f87171" },
+};
+
+const DIETARY_COLOURS = {
+  halal:       { bg: "rgba(34,197,94,0.12)",  border: "rgba(34,197,94,0.3)",  text: "#4ade80" },
+  vegetarian:  { bg: "rgba(110,231,183,0.12)",border: "rgba(110,231,183,0.3)",text: "#6ee7b7" },
+  vegan:       { bg: "rgba(110,231,183,0.12)",border: "rgba(110,231,183,0.3)",text: "#6ee7b7" },
+  "dairy-free":{ bg: "rgba(56,189,248,0.12)", border: "rgba(56,189,248,0.3)", text: "#38bdf8" },
+};
 const EMPTY_FORM = {
   name: "",
   description: "",
   priceCents: 0,
   category: "Food",
   imageUrl: "",
+  allergens: [],
+  dietaryTags: [],
 };
 
 const Vendor = () => {
@@ -140,6 +169,20 @@ const Vendor = () => {
     }
   };
 
+ // ── Checkbox helpers ─────────────────────────────────────────────────
+
+  const handleCheckboxChange = (field, value) => {
+    setFormData((prev) => {
+      const current = prev[field] || [];
+      return {
+        ...prev,
+        [field]: current.includes(value)
+          ? current.filter((v) => v !== value)
+          : [...current, value],
+      };
+    });
+  };
+
   // ── Menu modal helpers ───────────────────────────────────────────────
 
   const openAddModal = () => {
@@ -156,6 +199,8 @@ const Vendor = () => {
       priceCents:  Math.round((Number(item.price) || 0) * 100),
       category:    item.category    || "Food",
       imageUrl:    item.imageUrl    || "",
+      allergens:   item.allergens   || [],
+      dietaryTags: item.dietaryTags || [],
     });
     setEditingId(item.id);
     setFormError("");
@@ -227,7 +272,7 @@ const Vendor = () => {
     try {
       const token = await getToken();
       const { priceCents, ...rest } = formData;
-      const res = await fetch(`${API_BASE_URL}/api/menu/${editingId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/menu-items/${editingId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ ...rest, price: priceCents / 100 }),
@@ -244,7 +289,7 @@ const Vendor = () => {
   const handleConfirmDelete = async () => {
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/api/menu/${pendingDeleteId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/menu-items/${pendingDeleteId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -257,6 +302,37 @@ const Vendor = () => {
   };
 
   const pendingDeleteItem = menuItems.find((item) => item.id === pendingDeleteId);
+
+    /* ── Checkbox group component ── */
+  const renderCheckboxGroup = (label, field, options, colourMap) => (
+    <section className="kd-field">
+      <span className="kd-label">{label}</span>
+      <div className="kd-checkbox-grid">
+        {options.map((opt) => {
+          const checked = (formData[field] || []).includes(opt);
+          const colours = colourMap[opt];
+          return (
+            <label
+              key={opt}
+              className={`kd-checkbox-chip ${checked ? "checked" : ""}`}
+              style={checked && colours ? {
+                background: colours.bg,
+                borderColor: colours.border,
+                color: colours.text,
+              } : {}}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => handleCheckboxChange(field, opt)}
+              />
+              {opt}
+            </label>
+          );
+        })}
+      </div>
+    </section>
+  );
 
   // ── submitting appeal ───────────────────────────────────────────────
   const handleSubmitAppeal = async () => {
@@ -323,6 +399,12 @@ const Vendor = () => {
             {CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
           </select>
         </section>
+
+        {/* ── Allergens (FALCPA / SA R638) ── */}
+        {renderCheckboxGroup("Contains allergens", "allergens", ALLERGENS, ALLERGEN_COLOURS)}
+
+        {/* ── Dietary tags ── */}
+        {renderCheckboxGroup("Dietary info", "dietaryTags", DIETARY_TAGS, DIETARY_COLOURS)}
 
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-image">Photo</label>
@@ -640,6 +722,38 @@ const Vendor = () => {
                     <h3 className="kd-item-name">{item.name}</h3>
                     {item.description && <p className="kd-item-description">{item.description}</p>}
                     <p className="kd-item-price">R{Number(item.price).toFixed(2)}</p>
+                    
+                    {/* Dietary tag badges */}
+                    {item.dietaryTags?.length > 0 && (
+                      <div className="kd-tag-row">
+                        {item.dietaryTags.map((tag) => {
+                          const c = DIETARY_COLOURS[tag];
+                          return (
+                            <span key={tag} className="kd-info-badge" style={c ? {
+                              background: c.bg, borderColor: c.border, color: c.text,
+                            } : {}}>
+                              {tag}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Allergen badges */}
+                    {item.allergens?.length > 0 && (
+                      <div className="kd-tag-row">
+                        {item.allergens.map((a) => {
+                          const c = ALLERGEN_COLOURS[a];
+                          return (
+                            <span key={a} className="kd-info-badge kd-allergen-badge" style={c ? {
+                              background: c.bg, borderColor: c.border, color: c.text,
+                            } : {}}>
+                              ⚠ {a}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </section>
 
                   <footer className="kd-item-actions">

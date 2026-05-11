@@ -675,3 +675,74 @@ button {
   border-color: rgba(110, 231, 183, 0.4);
   background: rgba(255, 255, 255, 0.08);
 }
+
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   CHECKBOX CHIPS (allergens & dietary tags)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.kd-checkbox-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Each chip is a styled label wrapping a hidden checkbox */
+.kd-checkbox-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  text-transform: capitalize;
+}
+
+.kd-checkbox-chip:hover {
+  border-color: rgba(110, 231, 183, 0.3);
+  color: #94a3b8;
+}
+
+/* Checked state — colours injected inline from JS */
+.kd-checkbox-chip.checked {
+  font-weight: 600;
+}
+
+/* Hide the real checkbox — the label is the visual */
+.kd-checkbox-chip input[type="checkbox"] {
+  display: none;
+}
+
+/* ── Info badges on the item card ── */
+
+.kd-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.kd-info-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: capitalize;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #64748b;
+}
+
+.kd-allergen-badge {
+  font-size: 10px;
+}

@@ -11,6 +11,26 @@ import API_BASE_URL from '../api';
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
+// Colour maps — must match Vendor.js
+const ALLERGEN_COLOURS = {
+  milk:        { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  text: "#fbbf24" },
+  eggs:        { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  text: "#fbbf24" },
+  fish:        { bg: "rgba(99,102,241,0.12)",  border: "rgba(99,102,241,0.3)",  text: "#818cf8" },
+  shellfish:   { bg: "rgba(99,102,241,0.12)",  border: "rgba(99,102,241,0.3)",  text: "#818cf8" },
+  "tree nuts": { bg: "rgba(234,179,8,0.12)",   border: "rgba(234,179,8,0.3)",   text: "#ca8a04" },
+  peanuts:     { bg: "rgba(234,179,8,0.12)",   border: "rgba(234,179,8,0.3)",   text: "#ca8a04" },
+  wheat:       { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.3)",  text: "#fb923c" },
+  soy:         { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.3)",  text: "#fb923c" },
+  sesame:      { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.3)",   text: "#f87171" },
+};
+
+const DIETARY_COLOURS = {
+  halal:        { bg: "rgba(34,197,94,0.12)",   border: "rgba(34,197,94,0.3)",   text: "#4ade80" },
+  vegetarian:   { bg: "rgba(110,231,183,0.12)", border: "rgba(110,231,183,0.3)", text: "#6ee7b7" },
+  vegan:        { bg: "rgba(110,231,183,0.12)", border: "rgba(110,231,183,0.3)", text: "#6ee7b7" },
+  "dairy-free": { bg: "rgba(56,189,248,0.12)",  border: "rgba(56,189,248,0.3)",  text: "#38bdf8" },
+};
+
 const navItems = [
   {
     id: "overview", label: "Overview",
@@ -271,26 +291,61 @@ const Student = () => {
                     : filteredItems.map((item) =>
                         React.createElement("article", {
                           key: item._id,
-                          // Dim the entire card when sold out so it's clear at a glance
                           className: `kd-menu-card${item.isSoldOut ? " kd-menu-card--sold-out" : ""}`,
                         },
+                          // ── Image with sold-out badge ──
                           React.createElement("figure", { style: { position: "relative" } },
                             item.imageUrl && React.createElement("img", {
                               src: item.imageUrl, alt: item.name, className: "kd-menu-image", loading: "lazy",
                             }),
-                            // Sold-out badge sits over the image (only when sold out)
                             item.isSoldOut && React.createElement("span", {
                               className: "kd-sold-out-badge",
                               "aria-label": "Sold out",
                             }, "Sold Out")
                           ),
+
+                          // ── Item details ──
                           React.createElement("section", null,
                             React.createElement("h2", null, item.name),
                             React.createElement("p", null, item.description),
-                            item.category && React.createElement("p", null, React.createElement("small", null, item.category))
+                            item.category && React.createElement("p", null,
+                              React.createElement("small", null, item.category)
+                            ),
+
+                            // Dietary tag badges (halal, vegan, etc.)
+                            item.dietaryTags?.length > 0 && React.createElement("div", {
+                              className: "kd-tag-row",
+                            },
+                              item.dietaryTags.map((tag) => {
+                                const c = DIETARY_COLOURS[tag];
+                                return React.createElement("span", {
+                                  key: tag,
+                                  className: "kd-info-badge",
+                                  style: c ? { background: c.bg, borderColor: c.border, color: c.text } : {},
+                                }, tag);
+                              })
+                            ),
+
+                            // Allergen badges (⚠ milk, eggs, etc.)
+                            item.allergens?.length > 0 && React.createElement("div", {
+                              className: "kd-tag-row",
+                            },
+                              item.allergens.map((a) => {
+                                const c = ALLERGEN_COLOURS[a];
+                                return React.createElement("span", {
+                                  key: a,
+                                  className: "kd-info-badge kd-allergen-badge",
+                                  style: c ? { background: c.bg, borderColor: c.border, color: c.text } : {},
+                                }, `⚠ ${a}`);
+                              })
+                            )
                           ),
+
+                          // ── Footer: price + add button ──
                           React.createElement("footer", null,
-                            React.createElement("data", { value: item.price }, `R${Number(item.price).toFixed(2)}`),
+                            React.createElement("data", { value: item.price },
+                              `R${Number(item.price).toFixed(2)}`
+                            ),
                             React.createElement("button", {
                               className: `kd-btn${item.isSoldOut ? " kd-btn--unavailable" : ""}`,
                               onClick: () => handleAddToCart(item),
