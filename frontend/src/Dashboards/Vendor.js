@@ -1,5 +1,5 @@
 // Dashboards/Vendor.js
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import "./Vendor.css";
 import { useLocation } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -18,25 +18,25 @@ const ALLERGENS = [
 
 const DIETARY_TAGS = ["halal", "vegetarian", "vegan", "dairy-free"];
 
-// Colour map for allergen badges on the card
 const ALLERGEN_COLOURS = {
-  milk:         { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  text: "#fbbf24" },
-  eggs:         { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  text: "#fbbf24" },
-  fish:         { bg: "rgba(99,102,241,0.12)",  border: "rgba(99,102,241,0.3)",  text: "#818cf8" },
-  shellfish:    { bg: "rgba(99,102,241,0.12)",  border: "rgba(99,102,241,0.3)",  text: "#818cf8" },
-  "tree nuts":  { bg: "rgba(234,179,8,0.12)",   border: "rgba(234,179,8,0.3)",   text: "#ca8a04" },
-  peanuts:      { bg: "rgba(234,179,8,0.12)",   border: "rgba(234,179,8,0.3)",   text: "#ca8a04" },
-  wheat:        { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.3)",  text: "#fb923c" },
-  soy:          { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.3)",  text: "#fb923c" },
-  sesame:       { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.3)",   text: "#f87171" },
+  milk:        { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
+  eggs:        { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
+  fish:        { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
+  shellfish:   { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
+  "tree nuts": { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
+  peanuts:     { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
+  wheat:       { bg: "rgba(250,204,21,0.15)",  border: "rgba(250,204,21,0.4)",  text: "#eab308" },
+  soy:         { bg: "rgba(20,184,166,0.15)",  border: "rgba(20,184,166,0.4)",  text: "#2dd4bf" },
+  sesame:      { bg: "rgba(239,68,68,0.15)",   border: "rgba(239,68,68,0.4)",   text: "#f87171" },
 };
 
 const DIETARY_COLOURS = {
-  halal:       { bg: "rgba(34,197,94,0.12)",  border: "rgba(34,197,94,0.3)",  text: "#4ade80" },
-  vegetarian:  { bg: "rgba(110,231,183,0.12)",border: "rgba(110,231,183,0.3)",text: "#6ee7b7" },
-  vegan:       { bg: "rgba(110,231,183,0.12)",border: "rgba(110,231,183,0.3)",text: "#6ee7b7" },
-  "dairy-free":{ bg: "rgba(56,189,248,0.12)", border: "rgba(56,189,248,0.3)", text: "#38bdf8" },
+  halal:        { bg: "rgba(34,197,94,0.15)",  border: "rgba(34,197,94,0.4)",  text: "#4ade80"  },
+  vegetarian:   { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.4)", text: "#34d399"  },
+  vegan:        { bg: "rgba(5,150,105,0.15)",  border: "rgba(5,150,105,0.4)",  text: "#10b981"  },
+  "dairy-free": { bg: "rgba(56,189,248,0.15)", border: "rgba(56,189,248,0.4)", text: "#38bdf8"  },
 };
+
 const EMPTY_FORM = {
   name: "",
   description: "",
@@ -71,21 +71,16 @@ const Vendor = () => {
 
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    fetchMenuItems();
-    fetchVendorProfile().then((suspended) => {
-      if (suspended) fetchExistingAppeal();
-    });
-  }, []);
-
-  const getToken = () =>
-    getAccessTokenSilently({
+  const getToken = useCallback(
+    () => getAccessTokenSilently({
       authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
-    });
+    }),
+    [getAccessTokenSilently]
+  );
 
   // ── Data fetchers ────────────────────────────────────────────────────
 
-  const fetchVendorProfile = async () => {
+  const fetchVendorProfile = useCallback(async () => {
     if (!vendorId) return;
     try {
       const token = await getToken();
@@ -95,16 +90,16 @@ const Vendor = () => {
       if (!res.ok) throw new Error("Failed to fetch vendor profile");
       const data = await res.json();
       setVendorProfile(data);
-      if (data.status === "suspended"){
+      if (data.status === "suspended") {
         setIsSuspended(true);
         return true;
-      } 
+      }
     } catch (err) {
       console.error("Error fetching vendor profile:", err);
     }
-  };
+  }, [vendorId, getToken]);
 
-  const fetchMenuItems = async () => {
+  const fetchMenuItems = useCallback(async () => {
     if (!vendorId) return;
     try {
       const token = await getToken();
@@ -116,9 +111,9 @@ const Vendor = () => {
     } catch (err) {
       console.error("Error fetching menu items:", err);
     }
-  };
+  }, [vendorId, getToken]);
 
-  const fetchExistingAppeal = async () => {
+  const fetchExistingAppeal = useCallback(async () => {
     if (!vendorId) return;
     try {
       const token = await getToken();
@@ -131,7 +126,14 @@ const Vendor = () => {
     } catch (err) {
       console.error("Error checking existing appeal:", err);
     }
-  };
+  }, [vendorId, getToken]);
+
+  useEffect(() => {
+    fetchMenuItems();
+    fetchVendorProfile().then((suspended) => {
+      if (suspended) fetchExistingAppeal();
+    });
+  }, [fetchMenuItems, fetchVendorProfile, fetchExistingAppeal]);
 
   // ── Profile update handler ───────────────────────────────────────────
 
@@ -160,7 +162,6 @@ const Vendor = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to update availability");
-      // Flip immediately in local state — no need to re-fetch the whole list
       setMenuItems((prev) =>
         prev.map((m) => m.id === item.id ? { ...m, isSoldOut: !m.isSoldOut } : m)
       );
@@ -169,7 +170,7 @@ const Vendor = () => {
     }
   };
 
- // ── Checkbox helpers ─────────────────────────────────────────────────
+  // ── Checkbox helpers ─────────────────────────────────────────────────
 
   const handleCheckboxChange = (field, value) => {
     setFormData((prev) => {
@@ -303,7 +304,7 @@ const Vendor = () => {
 
   const pendingDeleteItem = menuItems.find((item) => item.id === pendingDeleteId);
 
-    /* ── Checkbox group component ── */
+  /* ── Checkbox group component ── */
   const renderCheckboxGroup = (label, field, options, colourMap) => (
     <section className="kd-field">
       <span className="kd-label">{label}</span>
@@ -334,7 +335,7 @@ const Vendor = () => {
     </section>
   );
 
-  // ── submitting appeal ───────────────────────────────────────────────
+  // ── Submitting appeal ───────────────────────────────────────────────
   const handleSubmitAppeal = async () => {
     if (!appealMessage.trim()) return;
     setAppealState("pending");
@@ -400,10 +401,7 @@ const Vendor = () => {
           </select>
         </section>
 
-        {/* ── Allergens (FALCPA / SA R638) ── */}
         {renderCheckboxGroup("Contains allergens", "allergens", ALLERGENS, ALLERGEN_COLOURS)}
-
-        {/* ── Dietary tags ── */}
         {renderCheckboxGroup("Dietary info", "dietaryTags", DIETARY_TAGS, DIETARY_COLOURS)}
 
         <section className="kd-field">
@@ -450,7 +448,6 @@ const Vendor = () => {
         >
           <article className="kd-modal" style={{ maxWidth: 480, padding: "36px 40px" }}>
 
-            {/* Icon */}
             <section style={{
               width: 48, height: 48, borderRadius: "50%",
               background: "var(--color-background-danger, rgba(239,68,68,0.12))",
@@ -464,13 +461,11 @@ const Vendor = () => {
               </svg>
             </section>
 
-            {/* Title */}
             <h2 className="kd-modal-title" id="suspended-title"
-              style={{ textAlign: "center", marginBottom: 3}}>
+              style={{ textAlign: "center", marginBottom: 3 }}>
               Account suspended
             </h2>
 
-            {/* Reason badge */}
             {vendorProfile?.statusReason && (
               <p style={{
                 textAlign: "center", fontSize: 13,
@@ -485,7 +480,6 @@ const Vendor = () => {
 
             <hr style={{ border: "none", borderTop: "1px solid var(--color-border-secondary)", marginBottom: 4 }} />
 
-            {/* idle — show form */}
             {appealState === "idle" && (
               <>
                 <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
@@ -524,9 +518,7 @@ const Vendor = () => {
                   </p>
                 )}
 
-                <footer style={{
-                  display: "flex", flexDirection: "column", gap: 10, marginTop: 8,
-                }}>
+                <footer style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
                   <button
                     className="kd-btn primary"
                     onClick={handleSubmitAppeal}
@@ -546,14 +538,12 @@ const Vendor = () => {
               </>
             )}
 
-            {/* pending — submitting */}
             {appealState === "pending" && (
               <p style={{ textAlign: "center", fontSize: 13, color: "var(--color-text-secondary)" }}>
                 Submitting your appeal…
               </p>
             )}
 
-            {/* submitted — success */}
             {appealState === "submitted" && (
               <>
                 <section style={{
@@ -576,7 +566,6 @@ const Vendor = () => {
               </>
             )}
 
-            {/* duplicate — already pending */}
             {appealState === "duplicate" && (
               <>
                 <section style={{
@@ -703,7 +692,6 @@ const Vendor = () => {
               {menuItems.map((item) => (
                 <li key={item.id} className={`kd-item-card ${item.isSoldOut ? "kd-item-card--sold-out" : ""}`}>
 
-                  {/* Image or placeholder — with sold-out overlay when applicable */}
                   <div className="kd-item-image-wrap">
                     {item.imageUrl ? (
                       <img src={item.imageUrl} alt={item.name} className="kd-item-image" />
@@ -722,8 +710,7 @@ const Vendor = () => {
                     <h3 className="kd-item-name">{item.name}</h3>
                     {item.description && <p className="kd-item-description">{item.description}</p>}
                     <p className="kd-item-price">R{Number(item.price).toFixed(2)}</p>
-                    
-                    {/* Dietary tag badges */}
+
                     {item.dietaryTags?.length > 0 && (
                       <div className="kd-tag-row">
                         {item.dietaryTags.map((tag) => {
@@ -739,7 +726,6 @@ const Vendor = () => {
                       </div>
                     )}
 
-                    {/* Allergen badges */}
                     {item.allergens?.length > 0 && (
                       <div className="kd-tag-row">
                         {item.allergens.map((a) => {
@@ -757,7 +743,6 @@ const Vendor = () => {
                   </section>
 
                   <footer className="kd-item-actions">
-                    {/* Sold-out toggle — leftmost, styled to reflect current state */}
                     <button
                       className={`kd-btn kd-btn--availability ${item.isSoldOut ? "kd-btn--mark-available" : "kd-btn--mark-soldout"}`}
                       onClick={() => handleToggleSoldOut(item)}

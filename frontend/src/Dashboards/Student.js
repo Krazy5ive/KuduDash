@@ -13,22 +13,22 @@ const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
 // Colour maps — must match Vendor.js
 const ALLERGEN_COLOURS = {
-  milk:        { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  text: "#fbbf24" },
-  eggs:        { bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.3)",  text: "#fbbf24" },
-  fish:        { bg: "rgba(99,102,241,0.12)",  border: "rgba(99,102,241,0.3)",  text: "#818cf8" },
-  shellfish:   { bg: "rgba(99,102,241,0.12)",  border: "rgba(99,102,241,0.3)",  text: "#818cf8" },
-  "tree nuts": { bg: "rgba(234,179,8,0.12)",   border: "rgba(234,179,8,0.3)",   text: "#ca8a04" },
-  peanuts:     { bg: "rgba(234,179,8,0.12)",   border: "rgba(234,179,8,0.3)",   text: "#ca8a04" },
-  wheat:       { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.3)",  text: "#fb923c" },
-  soy:         { bg: "rgba(249,115,22,0.12)",  border: "rgba(249,115,22,0.3)",  text: "#fb923c" },
-  sesame:      { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.3)",   text: "#f87171" },
+  milk:        { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
+  eggs:        { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
+  fish:        { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
+  shellfish:   { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
+  "tree nuts": { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
+  peanuts:     { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
+  wheat:       { bg: "rgba(250,204,21,0.15)",  border: "rgba(250,204,21,0.4)",  text: "#eab308" },
+  soy:         { bg: "rgba(20,184,166,0.15)",  border: "rgba(20,184,166,0.4)",  text: "#2dd4bf" },
+  sesame:      { bg: "rgba(239,68,68,0.15)",   border: "rgba(239,68,68,0.4)",   text: "#f87171" },
 };
 
 const DIETARY_COLOURS = {
-  halal:        { bg: "rgba(34,197,94,0.12)",   border: "rgba(34,197,94,0.3)",   text: "#4ade80" },
-  vegetarian:   { bg: "rgba(110,231,183,0.12)", border: "rgba(110,231,183,0.3)", text: "#6ee7b7" },
-  vegan:        { bg: "rgba(110,231,183,0.12)", border: "rgba(110,231,183,0.3)", text: "#6ee7b7" },
-  "dairy-free": { bg: "rgba(56,189,248,0.12)",  border: "rgba(56,189,248,0.3)",  text: "#38bdf8" },
+  halal:        { bg: "rgba(34,197,94,0.15)",  border: "rgba(34,197,94,0.4)",  text: "#4ade80"  },
+  vegetarian:   { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.4)", text: "#34d399"  },
+  vegan:        { bg: "rgba(5,150,105,0.15)",  border: "rgba(5,150,105,0.4)",  text: "#10b981"  },
+  "dairy-free": { bg: "rgba(56,189,248,0.15)", border: "rgba(56,189,248,0.4)", text: "#38bdf8"  },
 };
 
 const navItems = [
