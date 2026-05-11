@@ -86,7 +86,7 @@ const Student = () => {
     if (!selectedVendor) return;
     setLoadingMenu(true);
     setMenuItems([]);
-    fetch(`/api/menu/vendor/${selectedVendor._id}`)
+    fetch(`/api/menu-items/vendor/${selectedVendor._id}`)
       .then((res) => { if (!res.ok) throw new Error("Failed to fetch menu"); return res.json(); })
       .then((data) => { setMenuItems(data); setLoadingMenu(false); })
       .catch((err) => { setError(err.message); setLoadingMenu(false); });
