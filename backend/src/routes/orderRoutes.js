@@ -24,6 +24,10 @@ router.get("/admin/all",                 getAllOrders);
 router.get("/admin/student/:studentId",  verifyToken, attachAdmin, getOrdersByStudent);
 router.get("/admin/vendor/:vendorId",    verifyToken, attachAdmin, getOrdersByVendor);
 
+// ── Vendor routes ─────────────────────────────────────────────────────
+router.get(   "/vendor",          verifyToken, attachVendor, getVendorOrders);
+router.patch( "/:id/status",      verifyToken, attachVendor, updateOrderStatus);
+
 // ── Student routes ────────────────────────────────────────────────────
 router.get(   "/",           verifyToken, attachStudent, getOrders);
 router.post(  "/",           verifyToken, attachStudent, createOrder);
@@ -44,3 +48,5 @@ router.get("/admin/all", verifyToken, attachAdmin, async (req, res) => {
 });
 
 module.exports = router;  
+
+
