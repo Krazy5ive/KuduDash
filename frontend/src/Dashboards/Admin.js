@@ -430,6 +430,39 @@ const SuspendModal = ({ vendor, onConfirm, onClose }) => {
   );
 };
 
+const RejectModal = ({ appeal, onConfirm, onClose }) => {
+  const [reason, setReason] = useState("");
+
+  return (
+    <section className="kd-modal-overlay" role="dialog" aria-modal="true"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <article className="kd-modal">
+        <header><h2 className="kd-modal-title">Reject appeal</h2></header>
+        <p className="kd-suspend-desc">
+          Provide a reason for rejecting <strong>{appeal.vendor?.businessName}</strong>'s appeal.
+          This will be included in the email sent to the vendor.
+        </p>
+        <section className="kd-form-group">
+          <label className="kd-form-label" htmlFor="reject-reason">Rejection reason</label>
+          <textarea
+            id="reject-reason"
+            className="kd-form-select"
+            rows={4}
+            placeholder="e.g. Insufficient evidence provided, previous violations on record…"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            style={{ resize: "vertical", fontFamily: "inherit", fontSize: "13px" }}
+          />
+        </section>
+        <footer className="kd-modal-footer">
+          <button className="kd-btn ghost" onClick={onClose}>Cancel</button>
+          <button className="kd-btn danger" onClick={() => onConfirm(reason)}>Reject appeal</button>
+        </footer>
+      </article>
+    </section>
+  );
+};
+
 const StudentsPage = () => {
   const [students, setStudents]             = useState([]);
   const [search, setSearch]                 = useState("");
@@ -534,15 +567,6 @@ const VendorsPage = () => {
       });
   };
 
-  const handleReinstate = (id) => {
-    fetch(`${API_BASE_URL}/api/vendors/${id}/reinstate`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-    })
-      .then((res) => res.json())
-      .then((updated) => setVendors((prev) => prev.map((v) => v._id === id ? updated : v)));
-  };
-
   return (
     <section aria-label="Vendors management">
       <StatsRow items={vendors} type="vendors" />
@@ -577,9 +601,7 @@ const VendorsPage = () => {
                 <td>
                   <section className="kd-table-actions">
                     <button className="kd-action-btn view" onClick={() => setViewingVendor(vendor)}>View</button>
-                    {vendor.status === "suspended" ? (
-                      <button className="kd-action-btn restore" onClick={() => handleReinstate(vendor._id)}>Reinstate</button>
-                    ) : (
+                    {vendor.status !== "suspended" && (
                       <button className="kd-action-btn suspend" onClick={() => setSuspendingVendor(vendor)}>Suspend</button>
                     )}
                   </section>
@@ -846,6 +868,7 @@ const AppealsPage = () => {
   const [filterStatus,   setFilterStatus]   = useState("pending");
   const [viewingAppeal,  setViewingAppeal]  = useState(null);
   const [actionLoading,  setActionLoading]  = useState(null);
+  const [rejectingAppeal, setRejectingAppeal] = useState(null);
 
   // Fix: wrap getToken in useCallback so it's a stable reference
   const getToken = useCallback(
@@ -882,11 +905,12 @@ const AppealsPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       await fetch(`${API_BASE_URL}/api/appeals/${appeal._id}/review`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
+        method:  "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body:    JSON.stringify({ decision: "accepted" }),
       });
       setAppeals((prev) =>
-        prev.map((a) => a._id === appeal._id ? { ...a, status: "reviewed" } : a)
+        prev.map((a) => a._id === appeal._id ? { ...a, status: "reviewed", decision: "accepted" } : a)
       );
       setViewingAppeal(null);
     } catch (err) {
@@ -896,17 +920,19 @@ const AppealsPage = () => {
     }
   };
 
-  const handleReject = async (appeal) => {
+  const handleReject = async (appeal, rejectionReason) => {
     setActionLoading(appeal._id);
     try {
       const token = await getToken();
       await fetch(`${API_BASE_URL}/api/appeals/${appeal._id}/review`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
+        method:  "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body:    JSON.stringify({ decision: "rejected", rejectionReason }),
       });
       setAppeals((prev) =>
-        prev.map((a) => a._id === appeal._id ? { ...a, status: "reviewed" } : a)
+        prev.map((a) => a._id === appeal._id ? { ...a, status: "reviewed", decision: "rejected", rejectionReason } : a)
       );
+      setRejectingAppeal(null);
       setViewingAppeal(null);
     } catch (err) {
       console.error("Failed to reject appeal:", err);
@@ -1026,7 +1052,7 @@ const AppealsPage = () => {
                         <button
                           className="kd-action-btn suspend"
                           disabled={actionLoading === appeal._id}
-                          onClick={() => handleReject(appeal)}
+                          onClick={() => setRejectingAppeal(appeal)}
                         >
                           Reject
                         </button>
@@ -1074,6 +1100,28 @@ const AppealsPage = () => {
               ))}
             </ul>
 
+            {viewingAppeal.status === "reviewed" && (
+              <section style={{
+                margin: "12px 0",
+                padding: "12px 14px",
+                borderRadius: 8,
+                background: viewingAppeal.decision === "accepted"
+                  ? "color-mix(in srgb, var(--kd-green) 12%, transparent)"
+                  : "color-mix(in srgb, var(--kd-red) 12%, transparent)",
+                border: `1px solid ${viewingAppeal.decision === "accepted" ? "var(--kd-green)" : "var(--kd-red)"}`,
+              }}>
+                <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 4,
+                  color: viewingAppeal.decision === "accepted" ? "var(--kd-green)" : "var(--kd-red)" }}>
+                  {viewingAppeal.decision === "accepted" ? "✓ Appeal accepted — vendor reinstated" : "✗ Appeal rejected"}
+                </p>
+                {viewingAppeal.decision === "rejected" && viewingAppeal.rejectionReason && (
+                  <p style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>
+                    Reason: {viewingAppeal.rejectionReason}
+                  </p>
+                )}
+              </section>
+            )}
+
             <section style={{ margin: "16px 0" }}>
               <p className="kd-detail-label" style={{ marginBottom: 6 }}>Vendor's message</p>
               <p style={{
@@ -1096,7 +1144,7 @@ const AppealsPage = () => {
                   <button
                     className="kd-btn danger"
                     disabled={actionLoading === viewingAppeal._id}
-                    onClick={() => handleReject(viewingAppeal)}
+                    onClick={() => { setViewingAppeal(null); setRejectingAppeal(viewingAppeal); }}
                   >
                     Reject
                   </button>
@@ -1112,6 +1160,13 @@ const AppealsPage = () => {
             </footer>
           </article>
         </section>
+      )}
+      {rejectingAppeal && (
+        <RejectModal
+          appeal={rejectingAppeal}
+          onConfirm={(reason) => handleReject(rejectingAppeal, reason)}
+          onClose={() => setRejectingAppeal(null)}
+        />
       )}
     </section>
   );
@@ -1150,8 +1205,13 @@ const Admin = () => {
   const location = useLocation();
 
   const [expanded, setExpanded]         = useState(false);
-  const [activeNav, setActiveNav]       = useState("overview");
+  const [activeNav, setActiveNav] = useState( () => sessionStorage.getItem("adminNav") || "overview");
   const [adminProfile, setAdminProfile] = useState(null);
+
+  const handleNavChange = (id) => {
+    sessionStorage.setItem("adminNav", id);
+    setActiveNav(id);
+  };
 
   useEffect(() => {
     const state = location.state;
@@ -1202,7 +1262,7 @@ const Admin = () => {
               <li key={item.id}>
                 <button
                   className={`kd-nav-item ${activeNav === item.id ? "active" : ""}`}
-                  onClick={() => setActiveNav(item.id)}
+                  onClick={() => handleNavChange(item.id)}
                   aria-current={activeNav === item.id ? "page" : undefined}
                 >
                   <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true">{item.icon}</svg>
