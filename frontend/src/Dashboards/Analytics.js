@@ -61,17 +61,20 @@ const Analytics = () => {
 
         const itemCounts = {};
         orders.forEach((order) => {
+          const vendorName = order.vendor?.businessName || "Unknown";
           order.items?.forEach((item) => {
-            if (!itemCounts[item.name]) itemCounts[item.name] = 0;
-            itemCounts[item.name] += item.quantity;
+            const key = item.name;
+            if (!itemCounts[key]) itemCounts[key] = { name: item.name, count: 0, vendor: vendorName };
+            itemCounts[key].count += item.quantity;
           });
         });
         setPopularItems(
-          Object.entries(itemCounts)
-            .map(([name, count]) => ({ name, count }))
+          Object.values(itemCounts)
             .sort((a, b) => b.count - a.count)
             .slice(0, 10)
         );
+
+        
 
         setLoading(false);
       } catch (err) {
@@ -231,7 +234,10 @@ const Analytics = () => {
               <Tooltip
                 contentStyle={{ background: "#1e293b", border: "1px solid rgba(110,231,183,0.2)", borderRadius: "8px" }}
                 labelStyle={{ color: "#e2e8f0" }}
-                formatter={(value) => [value, "Orders"]}
+                formatter={(value, name, props) => [
+                  `${value} orders — ${props.payload.vendor}`,
+                  "Orders"
+                ]}
               />
               <Bar dataKey="count" radius={[0, 6, 6, 0]}>
                 {popularItems.map((_, index) => (
