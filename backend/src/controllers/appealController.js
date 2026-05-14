@@ -95,12 +95,47 @@ const getAllAppeals = async (req, res) => {
 // PATCH /api/appeals/:id/review  (admin marks as reviewed)
 const markReviewed = async (req, res) => {
   try {
+    const { decision, rejectionReason } = req.body;
+
     const appeal = await Appeal.findByIdAndUpdate(
       req.params.id,
-      { status: "reviewed" },
+      {
+        status: "reviewed",
+        decision: decision || null,
+        rejectionReason: decision === "rejected" ? (rejectionReason?.trim() || null) : null,
+      },
       { returnDocument: "after" }
-    );
+    ).populate("vendor", "businessName email");
+
     if (!appeal) return res.status(404).json({ message: "Appeal not found." });
+
+    if (decision === "accepted" && appeal.vendor?.email) {
+      try {
+        await transporter.sendMail({
+          from:    `"KuduDash" <${process.env.SMTP_USER}>`,
+          to:      appeal.vendor.email,
+          subject: "Your account has been reinstated",
+          text:    `Hi ${appeal.vendor.businessName},\n\nGreat news — your appeal has been reviewed and your KuduDash vendor account has been reinstated. You can now log in and resume taking orders.\n\nIf you have any questions, feel free to reach out to our support team.\n\n— KuduDash Support`,
+        });
+      } catch (err) {
+        console.error("Reinstatement email failed:", err.message);
+      }
+    }
+
+    if (decision === "rejected" && appeal.vendor?.email) {
+      const reason = rejectionReason?.trim() || "your appeal did not meet our reinstatement criteria at this time";
+      try {
+        await transporter.sendMail({
+          from:    `"KuduDash" <${process.env.SMTP_USER}>`,
+          to:      appeal.vendor.email,
+          subject: "Update on your suspension appeal",
+          text:    `Hi ${appeal.vendor.businessName},\n\nThank you for submitting an appeal. After careful review, we have unfortunately decided not to reinstate your account at this time.\n\nReason: ${reason}\n\nIf you believe this decision was made in error or your circumstances have changed, you are welcome to contact our support team.\n\n— KuduDash Support`,
+        });
+      } catch (err) {
+        console.error("Rejection email failed:", err.message);
+      }
+    }
+
     res.json(appeal);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -121,4 +156,19 @@ const getVendorAppeal = async (req, res) => {
   }
 };
 
-module.exports = { submitAppeal, getAllAppeals, markReviewed, getVendorAppeal };
+// PATCH /api/vendors/:id/reinstate
+const reinstateVendor = async (req, res) => {
+  try {
+    const vendor = await Vendor.findByIdAndUpdate(
+      req.params.id,
+      { status: "active", statusReason: null, suspendedAt: null },
+      { new: true }
+    );
+    if (!vendor) return res.status(404).json({ message: "Vendor not found." });
+    res.json(vendor);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { submitAppeal, getAllAppeals, markReviewed, getVendorAppeal, reinstateVendor };
