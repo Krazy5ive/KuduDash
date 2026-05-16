@@ -123,6 +123,32 @@ const VendorMenuTab = ({ vendorId }) => {
                 {item.description && (
                   <p className="kd-menu-item-desc">{item.description}</p>
                 )}
+
+                {/* ── Dietary tags ── */}
+                {Array.isArray(item.dietaryTags) && item.dietaryTags.length > 0 && (
+                  <section className="kd-menu-item-tags" aria-label="Dietary tags">
+                    {item.dietaryTags.map((tag) => (
+                      <span key={tag} className="kd-tag kd-tag--dietary">{tag}</span>
+                    ))}
+                  </section>
+                )}
+
+                {/* ── Allergens ── */}
+                {Array.isArray(item.allergens) && item.allergens.length > 0 && (
+                  <section className="kd-menu-item-tags kd-menu-item-tags--allergens" aria-label="Allergens">
+                    <span className="kd-tag-prefix">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                      Contains:
+                    </span>
+                    {item.allergens.map((allergen) => (
+                      <span key={allergen} className="kd-tag kd-tag--allergen">{allergen}</span>
+                    ))}
+                  </section>
+                )}
               </section>
               <section className="kd-menu-item-right">
                 <p className="kd-menu-item-price">R{Number(item.price).toFixed(2)}</p>
@@ -744,7 +770,6 @@ const OverviewPage = () => {
 
   return (
     <main aria-labelledby="overview-title">
-      {/* Fix: give the sr-only heading actual content */}
       <h1 id="overview-title" className="sr-only">Overview</h1>
 
       {/* Date range filter */}
@@ -870,7 +895,6 @@ const AppealsPage = () => {
   const [actionLoading,  setActionLoading]  = useState(null);
   const [rejectingAppeal, setRejectingAppeal] = useState(null);
 
-  // Fix: wrap getToken in useCallback so it's a stable reference
   const getToken = useCallback(
     () => getAccessTokenSilently({
       authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },

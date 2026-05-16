@@ -74,7 +74,6 @@ const navItems = [
 const fmtRand = (n) => "R" + Number(n).toFixed(2);
 
 const deriveStats = (orders) => {
-  // Backend statuses: pending, received, preparing, ready, collected, cancelled
   const completed  = orders.filter((o) => ["collected", "completed"].includes(o.status));
   const active     = orders.filter((o) => ["pending","received","preparing","ready"].includes(o.status));
   const totalSpend = completed.reduce((s, o) => s + (o.totalAmount || o.subtotal || 0), 0);
@@ -85,7 +84,6 @@ const deriveStats = (orders) => {
 const deriveFavouriteVendor = (orders) => {
   const map = {};
   orders.forEach((o) => {
-    // Backend populates field as "vendor", not "vendorId"
     const id   = o.vendor?._id || o.vendor;
     const name = o.vendor?.businessName || "Unknown Vendor";
     if (!id) return;
@@ -115,14 +113,13 @@ const deriveStatusBreakdown = (orders) => {
     const s = o.status || "pending";
     counts[s] = (counts[s] || 0) + 1;
   });
-  // Merge into display groups
   return [
-    { key: "pending",   label: "Pending",    count: counts.pending   || 0, color: "#00ffe7" }, // cyan
-    { key: "received",  label: "Received",   count: counts.received  || 0, color: "#ff00c8" }, // magenta
-    { key: "preparing", label: "Preparing",  count: counts.preparing || 0, color: "#bf5fff" }, // violet
-    { key: "ready",     label: "Ready",      count: counts.ready     || 0, color: "#00e5ff" }, // electric blue
-    { key: "collected", label: "Collected",  count: (counts.collected || 0) + (counts.completed || 0), color: "#39ff14" }, // neon green
-    { key: "cancelled", label: "Cancelled",  count: counts.cancelled || 0, color: "#ff3864" }, // hot pink-red
+    { key: "pending",   label: "Pending",    count: counts.pending   || 0, color: "#00ffe7" },
+    { key: "received",  label: "Received",   count: counts.received  || 0, color: "#ff00c8" },
+    { key: "preparing", label: "Preparing",  count: counts.preparing || 0, color: "#bf5fff" },
+    { key: "ready",     label: "Ready",      count: counts.ready     || 0, color: "#00e5ff" },
+    { key: "collected", label: "Collected",  count: (counts.collected || 0) + (counts.completed || 0), color: "#39ff14" },
+    { key: "cancelled", label: "Cancelled",  count: counts.cancelled || 0, color: "#ff3864" },
   ].filter((s) => s.count > 0);
 };
 
@@ -156,14 +153,12 @@ const DonutChart = ({ data, total }) => {
       viewBox: `0 0 ${SIZE} ${SIZE}`,
       className: "ov-donut-svg",
     },
-      // background ring
       React.createElement("circle", {
         cx, cy, r: R,
         fill: "none",
         stroke: "rgba(255,255,255,0.05)",
         strokeWidth: STROKE,
       }),
-      // slices
       slices.map((s) =>
         React.createElement("circle", {
           key: s.key,
@@ -177,7 +172,6 @@ const DonutChart = ({ data, total }) => {
           style: { transition: "stroke-dasharray 0.5s ease" },
         })
       ),
-      // centre label
       React.createElement("text", {
         x: cx, y: cy - 8,
         textAnchor: "middle",
@@ -194,8 +188,6 @@ const DonutChart = ({ data, total }) => {
         fontFamily: "DM Sans, sans-serif",
       }, total === 1 ? "order" : "orders")
     ),
-
-    // legend
     React.createElement("div", { className: "ov-donut-legend" },
       data.map((d) =>
         React.createElement("div", { key: d.key, className: "ov-donut-legend-row" },
@@ -214,7 +206,6 @@ const DonutChart = ({ data, total }) => {
 // ── StudentOverview ───────────────────────────────────────────────────────────
 
 const StudentOverview = ({ studentProfile, onNavigate }) => {
-  // FIX: also destructure isAuthenticated and isLoading from Auth0
   const {
     getAccessTokenSilently,
     user: auth0User,
@@ -227,16 +218,17 @@ const StudentOverview = ({ studentProfile, onNavigate }) => {
   const [error,   setError]   = useState(null);
 
   const fetchOrders = useCallback(() => {
-    // FIX: if auth0User isn't ready yet, unblock loading instead of hanging forever
     if (!auth0User?.sub) {
       setLoading(false);
       return;
     }
     setLoading(true);
     setError(null);
-    getAccessTokenSilently({
-      authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
-    })
+    // FIX: removed authorizationParams / audience override — let Auth0Provider
+    // supply the audience it was initialised with (same token the rest of the
+    // app uses), instead of requesting the Management API audience which returns
+    // an opaque token that the backend JWT middleware rejects.
+    getAccessTokenSilently()
       .then((token) =>
         fetch(`${API_BASE_URL}/api/orders`, {
           headers: { Authorization: "Bearer " + token },
@@ -258,12 +250,10 @@ const StudentOverview = ({ studentProfile, onNavigate }) => {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  // FIX: guard against Auth0 still initialising
   if (authLoading) {
     return React.createElement("p", { className: "kd-state-msg" }, "Authenticating…");
   }
 
-  // FIX: guard against unauthenticated state
   if (!isAuthenticated) {
     return React.createElement("p", { className: "kd-state-msg kd-error" }, "Please log in to view your overview.");
   }
@@ -271,22 +261,20 @@ const StudentOverview = ({ studentProfile, onNavigate }) => {
   if (loading) return React.createElement("p", { className: "kd-state-msg" }, "Loading your overview…");
   if (error)   return React.createElement("p", { className: "kd-state-msg kd-error" }, error);
 
-  const stats        = deriveStats(orders);
-  const favVendor    = deriveFavouriteVendor(orders);
-  const topItems     = deriveTopItems(orders);
+  const stats           = deriveStats(orders);
+  const favVendor       = deriveFavouriteVendor(orders);
+  const topItems        = deriveTopItems(orders);
   const statusBreakdown = deriveStatusBreakdown(orders);
-  const recentOrders = deriveRecentOrders(orders);
-  const firstName    = (studentProfile?.name || auth0User?.name || "Student").split(" ")[0];
+  const recentOrders    = deriveRecentOrders(orders);
+  const firstName       = (studentProfile?.name || auth0User?.name || "Student").split(" ")[0];
 
   return React.createElement("div", { className: "ov-root" },
 
-    // ── Greeting
     React.createElement("div", { className: "ov-greeting" },
       React.createElement("h2", null, "Hey, " + firstName + "!"),
       React.createElement("p", null, "Here's a summary of your KuduDash activity.")
     ),
 
-    // ── Stat cards
     React.createElement("div", { className: "ov-stat-grid" },
 
       React.createElement("div", { className: "ov-stat-card" },
@@ -321,10 +309,8 @@ const StudentOverview = ({ studentProfile, onNavigate }) => {
       )
     ),
 
-    // ── Middle row: Favourite vendor + Top items
     React.createElement("div", { className: "ov-mid-row" },
 
-      // Favourite vendor
       React.createElement("div", { className: "ov-card" },
         React.createElement("h3", { className: "ov-card-title" }, "Favourite Vendor"),
         favVendor
@@ -343,7 +329,6 @@ const StudentOverview = ({ studentProfile, onNavigate }) => {
           : React.createElement("p", { className: "ov-empty-hint" }, "Place some orders to see your favourite vendor.")
       ),
 
-      // Top menu items
       React.createElement("div", { className: "ov-card" },
         React.createElement("h3", { className: "ov-card-title" }, "Most Ordered Items"),
         topItems.length
@@ -360,7 +345,6 @@ const StudentOverview = ({ studentProfile, onNavigate }) => {
       )
     ),
 
-    // ── Order status breakdown
     React.createElement("div", { className: "ov-card ov-chart-card" },
       React.createElement("h3", { className: "ov-card-title" }, "Order Breakdown"),
       statusBreakdown.length
@@ -368,7 +352,6 @@ const StudentOverview = ({ studentProfile, onNavigate }) => {
         : React.createElement("p", { className: "ov-empty-hint" }, "Place some orders to see your breakdown.")
     ),
 
-    // ── Recent orders
     React.createElement("div", { className: "ov-card" },
       React.createElement("div", { className: "ov-card-header" },
         React.createElement("h3", { className: "ov-card-title" }, "Recent Orders"),
@@ -421,7 +404,6 @@ const Student = () => {
   const [searchParams] = useSearchParams();
   const [expanded, setExpanded] = useState(false);
 
-  // FIX: default to "overview" so the Overview tab is the landing page
   const [activeNav, setActiveNav] = useState(searchParams.get("tab") || "overview");
 
   const [selectedVendor, setSelectedVendor] = useState(null);

@@ -20,9 +20,9 @@ const {
 // ── Admin routes ──────────────────────────────────────────────────────
 // IMPORTANT: specific admin sub-routes must be declared BEFORE /:id
 // so Express doesn't swallow "admin" as an order ID.
-router.get("/admin/all",                verifyToken, attachAdmin, getAllOrders);
-router.get("/admin/student/:studentId", verifyToken, attachAdmin, getOrdersByStudent);
-router.get("/admin/vendor/:vendorId",   verifyToken, attachAdmin, getOrdersByVendor);
+router.get("/admin/all",                 getAllOrders);
+router.get("/admin/student/:studentId",  verifyToken, attachAdmin, getOrdersByStudent);
+router.get("/admin/vendor/:vendorId",    verifyToken, attachAdmin, getOrdersByVendor);
 
 // ── Vendor routes ─────────────────────────────────────────────────────
 router.get("/vendor", verifyToken, attachVendor, getVendorOrders);
