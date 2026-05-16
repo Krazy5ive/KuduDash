@@ -1,23 +1,21 @@
+//menuItemController.js
 const MenuItem = require("../models/MenuItem");
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// Reusable suspension check — uses req.vendor set by attachVendor
 const checkNotSuspended = (req, res) => {
   if (req.vendor?.status === "suspended") {
     res.status(403).json({
       message: "Your account has been suspended. Please contact support.",
     });
-    return true;
+    return true; // suspended
   }
-  return false;
+  return false; // not suspended, continue
 };
 
 const getMenuItems = async (req, res) => {
   try {
-    const query = { vendor: req.query.vendor, isAvailable: true };
-    if (req.query.dietaryLabel) {
-      query.dietaryLabels = req.query.dietaryLabel;
-    }
-    const items = await MenuItem.find(query);
+    const items = await MenuItem.find({ vendor: req.query.vendor, isAvailable: true });
     res.json(items);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -34,6 +32,7 @@ const getMenuItemById = async (req, res) => {
   }
 };
 
+// Admin / vendor: fetch ALL menu items for a vendor (available + unavailable)
 const getAllMenuItemsByVendor = async (req, res) => {
   try {
     const items = await MenuItem.find({ vendor: req.params.vendorId }).sort({ category: 1, name: 1 });
@@ -61,11 +60,7 @@ const createMenuItem = async (req, res) => {
     if (err.code === 11000) {
       return res.status(409).json({ message: "A menu item with that name already exists" });
     }
-    // ValidationError by name OR by message convention used in tests
-    const isValidation =
-      err.name === "ValidationError" ||
-      (err.message && err.message.toLowerCase().includes("validation"));
-    res.status(isValidation ? 400 : 500).json({ message: err.message });
+    res.status(400).json({ message: err.message });
   }
 };
 
@@ -73,13 +68,9 @@ const updateMenuItem = async (req, res) => {
   if (checkNotSuspended(req, res)) return;
   try {
     const { name } = req.body;
-
-    // Always look up the existing item first so we can return 404/500 correctly
-    // regardless of whether a name change is requested.
-    const existing = await MenuItem.findById(req.params.id);
-    if (!existing) return res.status(404).json({ message: "Menu item not found" });
-
     if (name) {
+      const existing = await MenuItem.findById(req.params.id);
+      if (!existing) return res.status(404).json({ message: "Menu item not found" });
       const duplicate = await MenuItem.findOne({
         _id: { $ne: req.params.id },
         vendor: existing.vendor,
@@ -89,7 +80,6 @@ const updateMenuItem = async (req, res) => {
         return res.status(409).json({ message: `A menu item called "${name}" already exists` });
       }
     }
-
     const item = await MenuItem.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!item) return res.status(404).json({ message: "Menu item not found" });
     res.json(item);
@@ -112,7 +102,8 @@ const deleteMenuItem = async (req, res) => {
   }
 };
 
-const toggleAvailability = async (req, res) => {
+// PATCH /api/menu-items/:id/sold-out
+const toggleSoldOut = async (req, res) => {
   if (checkNotSuspended(req, res)) return;
   try {
     const item = await MenuItem.findById(req.params.id);
@@ -138,6 +129,5 @@ module.exports = {
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
-  toggleAvailability,
-  toggleSoldOut: toggleAvailability,
+  toggleSoldOut,
 };
