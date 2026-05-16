@@ -78,7 +78,7 @@ const StarRating = ({ value }) => {
 const Vendor = () => {
   const { getAccessTokenSilently, logout } = useAuth0();
   const location = useLocation();
-  const vendorId = location.state?.vendorId || "";
+  const locationVendorId = location.state?.vendorId || "";
 
   const [expanded,        setExpanded]        = useState(false);
   const [activeNav,       setActiveNav]        = useState("overview");
@@ -112,13 +112,16 @@ const Vendor = () => {
     [getAccessTokenSilently]
   );
 
+  const vendorId = locationVendorId || vendorProfile?._id || vendorProfile?.id || "";
+
   // ── Data fetchers ────────────────────────────────────────────────────────
 
   const fetchVendorProfile = useCallback(async () => {
-    if (!vendorId) return;
+    const id = locationVendorId;
+    if (!id) return;
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/api/vendors/${vendorId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch vendor profile");
@@ -132,7 +135,7 @@ const Vendor = () => {
       console.error("Error fetching vendor profile:", err);
     }
     return false;
-  }, [vendorId, getToken]);
+  }, [locationVendorId, getToken]);
 
   const fetchMenuItems = useCallback(async () => {
     if (!vendorId) return;
