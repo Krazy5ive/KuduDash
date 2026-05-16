@@ -11,6 +11,7 @@ const adminRoutes    = require("./src/routes/adminRoutes");
 const authRoutes     = require("./src/routes/auth.routes");
 const paymentRoutes = require("./src/routes/paymentRoutes");
 const reviewRoutes = require('./src/routes/reviewRoutes');
+const appealRoutes = require("./src/routes/appealRoutes");
 
 const app = express();
 
@@ -20,7 +21,7 @@ const allowedOrigins = [
 ];
 
 // ── Middleware FIRST ─────────────────────────────
-app.use(cors({
+const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -28,10 +29,10 @@ app.use(cors({
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], 
-  allowedHeaders: ["Content-Type", "Authorization"],               
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
-}));
+};
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
@@ -47,5 +48,6 @@ app.use("/api/vendors", vendorRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/appeals", appealRoutes);
+
 module.exports = app;
-console.log("menuItemRoutes loaded");

@@ -20,6 +20,12 @@ const Vibe = () => {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(true);
 
+  // ── Clear any persisted nav state so dashboards always open on overview ──
+  const clearNavState = () => {
+    sessionStorage.removeItem("adminNav");
+    sessionStorage.removeItem("vendorNav");
+  };
+
   // ── Sync user after Auth0 redirect ────────────────────────────
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
@@ -54,7 +60,8 @@ const Vibe = () => {
         const data = await res.json();
 
         if (!data.isNewUser) {
-          // Returning user — go straight to their dashboard
+          // Returning user — clear nav state then go to their dashboard
+          clearNavState();
           navigate(`/dashboard/${data.role}`, {
             state: {
               ownerFirstName: data.ownerFirstName || data.firstName || "",
@@ -135,7 +142,8 @@ const Vibe = () => {
         return;
       }
 
-      // Navigate to dashboard
+      // Clear nav state then navigate to dashboard
+      clearNavState();
       navigate(`/dashboard/${selectedRole}`, {
         state: {
           ownerFirstName: data.ownerFirstName || body.given_name  || "",

@@ -10,26 +10,64 @@ import Admin from "./Dashboards/Admin";
 import PaymentPage from "./payment/Payment";
 import { CartProvider } from "./Cart/CartContext";
 import Callback from "./Callback";
+import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Login />} />
-        <Route path="/vibe" element={<Vibe />} />
+        {/* Public routes */}
+        <Route path="/"         element={<Login />} />
+        <Route path="/vibe"     element={<Vibe />} />
         <Route path="/callback" element={<Callback />} />
-        <Route path="/dashboard/vendor" element={<Vendor />} />
-        <Route path="/dashboard/admin" element={<Admin />} />
-        <Route path="/dashboard/student" element={
-          <CartProvider><Student /></CartProvider>
-        } />
-        <Route path="/payment/:orderId" element={
-          <CartProvider><PaymentPage /></CartProvider>
-        } />
-        <Route path="/payment/result/:orderId" element={
-          <CartProvider><PaymentPage showResult /></CartProvider>
-        } />
+
+        {/* Role-protected dashboard routes */}
+        <Route
+          path="/dashboard/vendor"
+          element={
+            <ProtectedRoute requiredRole="vendor">
+              <Vendor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <CartProvider>
+                <Student />
+              </CartProvider>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Payment routes — student only but role is already enforced
+            upstream; keeping CartProvider here is sufficient */}
+        <Route
+          path="/payment/:orderId"
+          element={
+            <CartProvider>
+              <PaymentPage />
+            </CartProvider>
+          }
+        />
+        <Route
+          path="/payment/result/:orderId"
+          element={
+            <CartProvider>
+              <PaymentPage showResult />
+            </CartProvider>
+          }
+        />
       </Routes>
     </AnimatePresence>
   );
