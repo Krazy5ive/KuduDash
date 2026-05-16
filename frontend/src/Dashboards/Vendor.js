@@ -95,6 +95,7 @@ const Vendor = () => {
   const [appealMessage,   setAppealMessage]    = useState("");
   const [appealState,     setAppealState]      = useState("idle");
   const [appealError,     setAppealError]      = useState("");
+  const [appealRejectionReason, setAppealRejectionReason] = useState("");
 
   // ── Overview state ───────────────────────────────────────────────────────
   const [ovOrders,      setOvOrders]      = useState([]);
@@ -130,6 +131,7 @@ const Vendor = () => {
     } catch (err) {
       console.error("Error fetching vendor profile:", err);
     }
+    return false;
   }, [vendorId, getToken]);
 
   const fetchMenuItems = useCallback(async () => {
@@ -153,9 +155,13 @@ const Vendor = () => {
       const res = await fetch(`${API_BASE_URL}/api/appeals/vendor/${vendorId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return;
       const data = await res.json();
-      if (data?.status === "pending") setAppealState("duplicate");
+      if (data?.status === "pending") {
+        setAppealState("duplicate");
+      } else if (data?.status === "reviewed" && data?.decision === "rejected") {
+        setAppealRejectionReason(data.rejectionReason || "");
+        setAppealState("rejected");
+      }
     } catch (err) {
       console.error("Error checking existing appeal:", err);
     }
@@ -388,6 +394,7 @@ const Vendor = () => {
 
   const handleSubmitAppeal = async () => {
     if (!appealMessage.trim()) return;
+    const previousState = appealState;
     setAppealState("pending"); setAppealError("");
     try {
       const token = await getToken();
@@ -397,9 +404,18 @@ const Vendor = () => {
         body: JSON.stringify({ vendorId, message: appealMessage }),
       });
       if (res.status === 409) { setAppealState("duplicate"); return; }
-      if (!res.ok) { const data = await res.json(); setAppealError(data.message || "Something went wrong."); setAppealState("idle"); return; }
+      if (!res.ok) { const 
+        data = await res.json(); 
+        setAppealError(data.message || "Something went wrong."); 
+        setAppealState(previousState); 
+        return; 
+      }
       setAppealState("submitted");
-    } catch (err) { console.error(err); setAppealError("Something went wrong. Please try again."); setAppealState("idle"); }
+    } catch (err) { 
+      console.error(err); 
+      setAppealError("Something went wrong. Please try again."); 
+      setAppealState(previousState); 
+    }
   };
 
   /* ── Checkbox group ── */
@@ -553,6 +569,63 @@ const Vendor = () => {
                   </p>
                 </section>
                 <button className="kd-btn ghost" onClick={() => logout({ returnTo: window.location.origin })} style={{ width: "100%" }}>Sign out</button>
+              </>
+            )}
+            {appealState === "rejected" && (
+              <>
+                <section style={{
+                  background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+                  borderRadius: 10, padding: "16px 18px", marginBottom: 20,
+                }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#f87171", marginBottom: 6 }}>
+                    ✕ Your appeal was rejected
+                  </p>
+                  {appealRejectionReason && (
+                    <p style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6, marginBottom: 0 }}>
+                      <strong style={{ color: "#cbd5e1" }}>Reason: </strong>{appealRejectionReason}
+                    </p>
+                  )}
+                </section>
+                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16, lineHeight: 1.6 }}>
+                  You can submit a new appeal if you believe this decision was made in error.
+                </p>
+                <section style={{ marginBottom: 12 }}>
+                  <label style={{
+                    display: "block", fontSize: 12, fontWeight: 600, color: "#94a3b8",
+                    textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8,
+                  }}>
+                    New appeal message
+                  </label>
+                  <textarea
+                    className="kd-textarea"
+                    placeholder="Explain why this suspension should be reversed…"
+                    value={appealMessage}
+                    onChange={(e) => setAppealMessage(e.target.value)}
+                    maxLength={1000}
+                    rows={5}
+                  />
+                  <p style={{ fontSize: 11, color: "#64748b", textAlign: "right", marginTop: 4 }}>
+                    {appealMessage.length}/1000
+                  </p>
+                </section>
+                {appealError && <p className="kd-form-error" role="alert" style={{ marginBottom: 16 }}>{appealError}</p>}
+                <footer style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+                  <button
+                    className="kd-btn primary"
+                    onClick={handleSubmitAppeal}
+                    disabled={!appealMessage.trim()}
+                    style={{ width: "100%" }}
+                  >
+                    Resubmit appeal
+                  </button>
+                  <button
+                    className="kd-btn ghost"
+                    onClick={() => logout({ returnTo: window.location.origin })}
+                    style={{ width: "100%" }}
+                  >
+                    Sign out
+                  </button>
+                </footer>
               </>
             )}
           </article>

@@ -147,8 +147,7 @@ const getVendorAppeal = async (req, res) => {
   try {
     const appeal = await Appeal.findOne({
       vendor: req.params.vendorId,
-      status: "pending",
-    });
+    }).sort({ createdAt: -1 }); // most recent appeal, any status
     if (!appeal) return res.status(404).json({ message: "No pending appeal found." });
     res.json(appeal);
   } catch (err) {
