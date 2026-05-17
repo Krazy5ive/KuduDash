@@ -79,6 +79,9 @@ const Vendor = () => {
   const { getAccessTokenSilently, logout } = useAuth0();
   const location = useLocation();
   const locationVendorId = location.state?.vendorId || sessionStorage.getItem('vendorId') || "";
+  console.log('locationVendorId:', locationVendorId);
+  console.log('location.state:', location.state);
+  console.log('sessionStorage vendorId:', sessionStorage.getItem('vendorId'));
 
   const [expanded,        setExpanded]        = useState(false);
   const [activeNav,       setActiveNav]        = useState("overview");
