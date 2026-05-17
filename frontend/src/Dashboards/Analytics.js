@@ -34,9 +34,9 @@ const Analytics = () => {
         orders.forEach((order) => {
           const date = new Date(order.createdAt).toLocaleDateString("en-ZA", { day: "2-digit", month: "short" });
           if (!salesByDate[date]) salesByDate[date] = 0;
-          salesByDate[date] += order.totalAmount / 100;
+          salesByDate[date] += order.totalAmount / 100 ;
         });
-        setTotalSales(Object.entries(salesByDate).map(([date, total]) => ({ date, total: parseFloat(total.toFixed(2)) })));
+        setTotalSales(Object.entries(salesByDate).map(([date, total]) => ({ date, total: parseFloat(total.toFixed(2)) })))
 
         const salesByVendor = {};
         orders.forEach((order) => {
@@ -44,7 +44,7 @@ const Analytics = () => {
           if (!salesByVendor[name]) salesByVendor[name] = 0;
           salesByVendor[name] += order.totalAmount / 100;
         });
-        setVendorSales(Object.entries(salesByVendor).map(([vendor, total]) => ({ vendor, total: parseFloat(total.toFixed(2)) })));
+        setVendorSales(Object.entries(salesByVendor).map(([vendor, total]) => ({ vendor, total: parseFloat(total.toFixed(2)) })))
 
         const hourCounts = {};
         orders.forEach((order) => {
@@ -87,8 +87,8 @@ const Analytics = () => {
 
   const exportCSV = (data, filename) => {
     if (!data.length) return;
-    const headers = Object.keys(data[0]).join(",");
-    const rows = data.map((row) => Object.values(row).join(",")).join("\n");
+    const headers = Object.keys(data[0]).join(";");
+    const rows = data.map((row) => Object.values(row).join(";")).join("\n");
     const blob = new Blob([`${headers}\n${rows}`], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
