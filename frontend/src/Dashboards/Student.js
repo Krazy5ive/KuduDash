@@ -11,23 +11,26 @@ import API_BASE_URL from '../api';
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
+// R146/2010 — South African Department of Health regulated common allergens
+// Source: Government Gazette No. 32975, Regulation 1 (Definitions) + Regulations 43–45
 const ALLERGEN_COLOURS = {
-  milk:        { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
-  eggs:        { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
-  fish:        { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
-  shellfish:   { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
-  "tree nuts": { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
-  peanuts:     { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
-  wheat:       { bg: "rgba(250,204,21,0.15)",  border: "rgba(250,204,21,0.4)",  text: "#eab308" },
-  soy:         { bg: "rgba(20,184,166,0.15)",  border: "rgba(20,184,166,0.4)",  text: "#2dd4bf" },
-  sesame:      { bg: "rgba(239,68,68,0.15)",   border: "rgba(239,68,68,0.4)",   text: "#f87171" },
+  "cow's milk":               { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
+  eggs:                       { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
+  fish:                       { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
+  "crustaceans and molluscs": { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
+  "tree nuts":                { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
+  peanuts:                    { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
+  soybeans:                   { bg: "rgba(20,184,166,0.15)",  border: "rgba(20,184,166,0.4)",  text: "#2dd4bf" },
+  "cereals containing gluten":{ bg: "rgba(250,204,21,0.15)",  border: "rgba(250,204,21,0.4)",  text: "#eab308" },
 };
 
+// Dietary tags sourced from:
+// - "halal": South African National Halaal Authority (SANHA) — sanha.org.za
+// - "vegetarian" / "vegan": R146/2010 Regulation 1 (Definitions) + Regulation 48
 const DIETARY_COLOURS = {
-  halal:        { bg: "rgba(34,197,94,0.15)",  border: "rgba(34,197,94,0.4)",  text: "#4ade80" },
-  vegetarian:   { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.4)", text: "#34d399" },
-  vegan:        { bg: "rgba(5,150,105,0.15)",  border: "rgba(5,150,105,0.4)",  text: "#10b981" },
-  "dairy-free": { bg: "rgba(56,189,248,0.15)", border: "rgba(56,189,248,0.4)", text: "#38bdf8" },
+  halal:      { bg: "rgba(34,197,94,0.15)",  border: "rgba(34,197,94,0.4)",  text: "#4ade80" },
+  vegetarian: { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.4)", text: "#34d399" },
+  vegan:      { bg: "rgba(5,150,105,0.15)",  border: "rgba(5,150,105,0.4)",  text: "#10b981" },
 };
 
 const STATUS_META = {
@@ -224,10 +227,6 @@ const StudentOverview = ({ studentProfile, onNavigate }) => {
     }
     setLoading(true);
     setError(null);
-    // FIX: removed authorizationParams / audience override — let Auth0Provider
-    // supply the audience it was initialised with (same token the rest of the
-    // app uses), instead of requesting the Management API audience which returns
-    // an opaque token that the backend JWT middleware rejects.
     getAccessTokenSilently()
       .then((token) =>
         fetch(`${API_BASE_URL}/api/orders`, {

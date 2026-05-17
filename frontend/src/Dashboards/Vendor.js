@@ -10,30 +10,39 @@ import API_BASE_URL from '../api';
 
 const CATEGORIES = ["Food", "Drink", "Snack", "Dessert", "Other"];
 
+// R146/2010 — South African Department of Health regulated common allergens
+// Source: Government Gazette No. 32975, Regulation 1 (Definitions) + Regulations 43–45
 const ALLERGENS = [
-  "milk", "eggs", "fish", "shellfish",
-  "tree nuts", "peanuts", "wheat", "soy", "sesame",
+  "cow's milk",
+  "eggs",
+  "fish",
+  "crustaceans and molluscs",
+  "tree nuts",
+  "peanuts",
+  "soybeans",
+  "cereals containing gluten",
 ];
 
-const DIETARY_TAGS = ["halal", "vegetarian", "vegan", "dairy-free"];
+// Dietary tags sourced from:
+// - "halal": South African National Halaal Authority (SANHA) — sanha.org.za
+// - "vegetarian" / "vegan": R146/2010 Regulation 1 (Definitions) + Regulation 48
+const DIETARY_TAGS = ["halal", "vegetarian", "vegan"];
 
 const ALLERGEN_COLOURS = {
-  milk:        { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
-  eggs:        { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
-  fish:        { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
-  shellfish:   { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
-  "tree nuts": { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
-  peanuts:     { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
-  wheat:       { bg: "rgba(250,204,21,0.15)",  border: "rgba(250,204,21,0.4)",  text: "#eab308" },
-  soy:         { bg: "rgba(20,184,166,0.15)",  border: "rgba(20,184,166,0.4)",  text: "#2dd4bf" },
-  sesame:      { bg: "rgba(239,68,68,0.15)",   border: "rgba(239,68,68,0.4)",   text: "#f87171" },
+  "cow's milk":               { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
+  eggs:                       { bg: "rgba(251,113,133,0.15)", border: "rgba(251,113,133,0.4)", text: "#fb7185" },
+  fish:                       { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
+  "crustaceans and molluscs": { bg: "rgba(168,85,247,0.15)",  border: "rgba(168,85,247,0.4)",  text: "#c084fc" },
+  "tree nuts":                { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
+  peanuts:                    { bg: "rgba(251,146,60,0.15)",  border: "rgba(251,146,60,0.4)",  text: "#fb923c" },
+  soybeans:                   { bg: "rgba(20,184,166,0.15)",  border: "rgba(20,184,166,0.4)",  text: "#2dd4bf" },
+  "cereals containing gluten":{ bg: "rgba(250,204,21,0.15)",  border: "rgba(250,204,21,0.4)",  text: "#eab308" },
 };
 
 const DIETARY_COLOURS = {
-  halal:        { bg: "rgba(34,197,94,0.15)",  border: "rgba(34,197,94,0.4)",  text: "#4ade80"  },
-  vegetarian:   { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.4)", text: "#34d399"  },
-  vegan:        { bg: "rgba(5,150,105,0.15)",  border: "rgba(5,150,105,0.4)",  text: "#10b981"  },
-  "dairy-free": { bg: "rgba(56,189,248,0.15)", border: "rgba(56,189,248,0.4)", text: "#38bdf8"  },
+  halal:      { bg: "rgba(34,197,94,0.15)",  border: "rgba(34,197,94,0.4)",  text: "#4ade80" },
+  vegetarian: { bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.4)", text: "#34d399" },
+  vegan:      { bg: "rgba(5,150,105,0.15)",  border: "rgba(5,150,105,0.4)",  text: "#10b981" },
 };
 
 const EMPTY_FORM = {
@@ -78,10 +87,7 @@ const StarRating = ({ value }) => {
 const Vendor = () => {
   const { getAccessTokenSilently, logout } = useAuth0();
   const location = useLocation();
-  const locationVendorId = location.state?.vendorId || sessionStorage.getItem('vendorId') || "";
-  console.log('locationVendorId:', locationVendorId);
-  console.log('location.state:', location.state);
-  console.log('sessionStorage vendorId:', sessionStorage.getItem('vendorId'));
+  const vendorId = location.state?.vendorId || "";
 
   const [expanded,        setExpanded]        = useState(false);
   const [activeNav,       setActiveNav]        = useState("overview");
@@ -115,22 +121,13 @@ const Vendor = () => {
     [getAccessTokenSilently]
   );
 
-  useEffect(() => {
-    if (location.state?.vendorId) {
-      sessionStorage.setItem('vendorId', location.state.vendorId);
-    }
-  }, [location.state?.vendorId]);
-
-  const vendorId = locationVendorId || vendorProfile?._id || vendorProfile?.id || "";
-
   // ── Data fetchers ────────────────────────────────────────────────────────
 
   const fetchVendorProfile = useCallback(async () => {
-    const id = locationVendorId;
-    if (!id) return;
+    if (!vendorId) return;
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/vendors/${vendorId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch vendor profile");
@@ -144,7 +141,7 @@ const Vendor = () => {
       console.error("Error fetching vendor profile:", err);
     }
     return false;
-  }, [locationVendorId, getToken]);
+  }, [vendorId, getToken]);
 
   const fetchMenuItems = useCallback(async () => {
     if (!vendorId) return;
@@ -184,8 +181,6 @@ const Vendor = () => {
     setOvLoading(true);
     try {
       const token = await getToken();
-      // GET /api/orders/vendor uses attachVendor middleware — identifies vendor from token
-      // GET /api/reviews/vendor/:vendorId is a public/vendor endpoint
       const [ordersRes, reviewsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/orders/vendor`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -197,7 +192,6 @@ const Vendor = () => {
 
       if (ordersRes.ok) {
         const raw = await ordersRes.json();
-        // Guard against { message, orders: [] } shape on empty results
         setOvOrders(Array.isArray(raw) ? raw : raw.orders || []);
       } else {
         console.error("Orders fetch failed:", ordersRes.status);
@@ -477,7 +471,7 @@ const Vendor = () => {
             {CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
           </select>
         </section>
-        {renderCheckboxGroup("Contains allergens", "allergens", ALLERGENS, ALLERGEN_COLOURS)}
+        {renderCheckboxGroup("Contains allergens (R146/2010)", "allergens", ALLERGENS, ALLERGEN_COLOURS)}
         {renderCheckboxGroup("Dietary info", "dietaryTags", DIETARY_TAGS, DIETARY_COLOURS)}
         <section className="kd-field">
           <label className="kd-label" htmlFor="item-image">Photo</label>
@@ -653,7 +647,6 @@ const Vendor = () => {
         </header>
         <nav className="kd-nav" aria-label="Main menu">
           <ul>
-            {/* Overview */}
             <li>
               <button className={`kd-nav-item ${activeNav === "overview" ? "active" : ""}`}
                 onClick={() => setActiveNav("overview")} aria-current={activeNav === "overview" ? "page" : undefined}>
@@ -666,7 +659,6 @@ const Vendor = () => {
                 {expanded && <p className="kd-nav-text">Overview</p>}
               </button>
             </li>
-            {/* Menu */}
             <li>
               <button className={`kd-nav-item ${activeNav === "menu" ? "active" : ""}`}
                 onClick={() => setActiveNav("menu")} aria-current={activeNav === "menu" ? "page" : undefined}>
@@ -674,7 +666,6 @@ const Vendor = () => {
                 {expanded && <p className="kd-nav-text">Menu</p>}
               </button>
             </li>
-            {/* Orders */}
             <li>
               <button className={`kd-nav-item ${activeNav === "orders" ? "active" : ""}`}
                 onClick={() => setActiveNav("orders")} aria-current={activeNav === "orders" ? "page" : undefined}>
@@ -682,7 +673,6 @@ const Vendor = () => {
                 {expanded && <p className="kd-nav-text">Orders</p>}
               </button>
             </li>
-            {/* Reviews */}
             <li>
               <button className={`kd-nav-item ${activeNav === "reviews" ? "active" : ""}`}
                 onClick={() => setActiveNav("reviews")} aria-current={activeNav === "reviews" ? "page" : undefined}>
@@ -692,7 +682,6 @@ const Vendor = () => {
                 {expanded && <p className="kd-nav-text">Reviews</p>}
               </button>
             </li>
-            {/* Customers */}
             <li>
               <button className={`kd-nav-item ${activeNav === "customers" ? "active" : ""}`}
                 onClick={() => setActiveNav("customers")} aria-current={activeNav === "customers" ? "page" : undefined}>
@@ -702,7 +691,6 @@ const Vendor = () => {
                 {expanded && <p className="kd-nav-text">Customers</p>}
               </button>
             </li>
-            {/* Reports */}
             <li>
               <button className={`kd-nav-item ${activeNav === "reports" ? "active" : ""}`}
                 onClick={() => setActiveNav("reports")} aria-current={activeNav === "reports" ? "page" : undefined}>
@@ -730,7 +718,6 @@ const Vendor = () => {
         {activeNav === "overview" && (
           <section className="ov-root" aria-label="Vendor overview">
 
-            {/* Greeting */}
             <header className="ov-greeting">
               <h2 className="ov-greeting-title">
                 Welcome back{vendorProfile?.shopName ? `, ${vendorProfile.shopName}` : ""}
@@ -745,7 +732,6 @@ const Vendor = () => {
               </div>
             ) : (
               <>
-                {/* Time filter */}
                 <nav className="ov-filter-row" aria-label="Time period filter">
                   {[{ k: "today", l: "Today" }, { k: "week", l: "This week" }, { k: "month", l: "This month" }, { k: "all", l: "All time" }]
                     .map(({ k, l }) => (
@@ -756,7 +742,6 @@ const Vendor = () => {
                     ))}
                 </nav>
 
-                {/* Stat cards */}
                 <ul className="ov-stats-grid">
                   {[
                     {label: "Revenue",       value: fmtPrice(revenue),        sub: `${collected.length} collected order${collected.length !== 1 ? "s" : ""}`, accent: "#6ee7b7" },
@@ -779,10 +764,8 @@ const Vendor = () => {
                   ))}
                 </ul>
 
-                {/* Middle row */}
                 <div className="ov-mid-row">
 
-                  {/* Recent orders */}
                   <article className="ov-card">
                     <header className="ov-card-header">
                       <h3 className="ov-card-title">Recent orders</h3>
@@ -814,7 +797,6 @@ const Vendor = () => {
                     )}
                   </article>
 
-                  {/* Status bar chart */}
                   <article className="ov-card">
                     <header className="ov-card-header">
                       <h3 className="ov-card-title">Orders by status</h3>
@@ -848,10 +830,8 @@ const Vendor = () => {
                   </article>
                 </div>
 
-                {/* Bottom row */}
                 <div className="ov-bottom-row">
 
-                  {/* Top sellers */}
                   <article className="ov-card">
                     <header className="ov-card-header">
                       <h3 className="ov-card-title">Top sellers</h3>
@@ -872,7 +852,6 @@ const Vendor = () => {
                     )}
                   </article>
 
-                  {/* Sold-out quick view */}
                   <article className="ov-card">
                     <header className="ov-card-header">
                       <h3 className="ov-card-title">Sold out items</h3>
@@ -899,7 +878,6 @@ const Vendor = () => {
                     )}
                   </article>
 
-                  {/* Latest reviews */}
                   <article className="ov-card">
                     <header className="ov-card-header">
                       <h3 className="ov-card-title">Latest reviews</h3>
