@@ -112,7 +112,8 @@ const markReviewed = async (req, res) => {
 // GET /api/appeals/vendor/:vendorId
 const getVendorAppeal = async (req, res) => {
   try {
-    const appeal = await Appeal.findOne({ vendor: req.params.vendorId });
+    const appeal = await Appeal.findOne({ vendor: req.params.vendorId })
+    .sort({ createdAt: -1 });
     if (!appeal) return res.status(404).json({ message: "No pending appeal found." });
     res.json(appeal);
   } catch (err) {
