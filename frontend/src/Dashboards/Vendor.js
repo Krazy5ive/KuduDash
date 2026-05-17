@@ -78,7 +78,7 @@ const StarRating = ({ value }) => {
 const Vendor = () => {
   const { getAccessTokenSilently, logout } = useAuth0();
   const location = useLocation();
-  const locationVendorId = location.state?.vendorId || "";
+  const locationVendorId = location.state?.vendorId || sessionStorage.getItem('vendorId') || "";
 
   const [expanded,        setExpanded]        = useState(false);
   const [activeNav,       setActiveNav]        = useState("overview");
@@ -111,6 +111,12 @@ const Vendor = () => {
     }),
     [getAccessTokenSilently]
   );
+
+  useEffect(() => {
+    if (location.state?.vendorId) {
+      sessionStorage.setItem('vendorId', location.state.vendorId);
+    }
+  }, [location.state?.vendorId]);
 
   const vendorId = locationVendorId || vendorProfile?._id || vendorProfile?.id || "";
 
