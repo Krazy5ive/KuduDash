@@ -62,14 +62,6 @@ const navItems = [
     id: "orders", label: "Orders",
     path: [React.createElement("path", { key: "a", d: "M6 2h12v20H6zM6 6h12" })],
   },
-  {
-    id: "about", label: "About",
-    path: [React.createElement("path", { key: "a", d: "M12 2a10 10 0 100 20 10 10 0 000-20z" })],
-  },
-  {
-    id: "settings", label: "Settings",
-    path: [React.createElement("path", { key: "a", d: "M12 8a4 4 0 100 8 4 4 0 000-8zm8 4a8 8 0 11-16 0 8 8 0 0116 0z" })],
-  },
 ];
 
 // ── Overview helpers ──────────────────────────────────────────────────────────

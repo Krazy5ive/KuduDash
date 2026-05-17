@@ -691,22 +691,6 @@ const Vendor = () => {
                 {expanded && <p className="kd-nav-text">Reviews</p>}
               </button>
             </li>
-            <li>
-              <button className={`kd-nav-item ${activeNav === "customers" ? "active" : ""}`}
-                onClick={() => setActiveNav("customers")} aria-current={activeNav === "customers" ? "page" : undefined}>
-                <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true">
-                  <circle cx="9" cy="7" r="4" /><path d="M2 21c0-4 3.1-7 7-7h4c3.9 0 7 3 7 7" /><circle cx="19" cy="9" r="3" />
-                </svg>
-                {expanded && <p className="kd-nav-text">Customers</p>}
-              </button>
-            </li>
-            <li>
-              <button className={`kd-nav-item ${activeNav === "reports" ? "active" : ""}`}
-                onClick={() => setActiveNav("reports")} aria-current={activeNav === "reports" ? "page" : undefined}>
-                <svg viewBox="0 0 24 24" className="kd-icon" aria-hidden="true"><path d="M4 20V10M9 20V4M14 20v-6M19 20v-9" /></svg>
-                {expanded && <p className="kd-nav-text">Reports</p>}
-              </button>
-            </li>
           </ul>
         </nav>
       </aside>
