@@ -27,8 +27,7 @@ const sendMail = async (options) => {
 // POST /api/appeals/:vendorId
 const submitAppeal = async (req, res) => {
   try {
-    const { vendorId } = req.params;
-    const { message } = req.body;
+    const { vendorId, message } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({ message: "Appeal message is required." });
