@@ -132,7 +132,7 @@ const Vendor = () => {
   // ── Data fetchers ────────────────────────────────────────────────────────
 
   const fetchVendorProfile = useCallback(async () => {
-    const id = locationVendorId;
+    const id = locationVendorId || sessionStorage.getItem('vendorId');
     if (!id) return;
     try {
       const token = await getToken();
