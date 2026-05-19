@@ -16,6 +16,7 @@ A campus food ordering platform for students to order from vendors, with admin o
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Tests & Coverage](#tests--coverage)
+- [Deployment](#deployment)
 
 ---
 
@@ -200,3 +201,7 @@ Test files are located in `backend/src/tests/` and cover:
 
 ---
 
+## Deployment 
+This application has been deployed using both Azure services and Vercel. It can be accessed from this URL: https://kudu-dash.vercel.app
+
+---
