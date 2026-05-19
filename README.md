@@ -170,6 +170,7 @@ Now, in a separate terminal, start the frontend server
 # Start frontend server
 cd frontend
 npm start
+# Alternatively, use npm run dev
 ```
 #### 4. Visit Site
 - Frontend is hosted at `localhost:3000` by default
