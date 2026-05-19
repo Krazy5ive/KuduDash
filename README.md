@@ -109,7 +109,6 @@ AUTH0_AUDIENCE=<your-auth0-audience>
 # Admin registration
 ADMIN_SECRET_CODE=<your-admin-code>
 
-# PayFast (sandbox)
 # PayFast credentials (sandbox)
 PF_MERCHANT_ID=<your-merchant-id>
 PF_MERCHANT_KEY=<your-merchant-key>
