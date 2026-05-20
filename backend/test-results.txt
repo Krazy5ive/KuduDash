@@ -1,0 +1,393 @@
+
+> backend@1.0.0 test
+> node node_modules/jest/bin/jest.js --coverage --coverageReporters=lcov
+
+PASS src/__tests__/menuItemAvailability.test.js
+PASS src/__tests__/cartController.test.js
+PASS src/__tests__/menuItemAllergens.test.js
+PASS src/__tests__/menuItemController.test.js
+PASS src/__tests__/paymentController.test.js
+  ΓùÅ Console
+
+    console.error
+      [initiatePayment] Error: DB error
+          at Object.<anonymous> (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\src\__tests__\paymentController.test.js:132:47)
+          at Promise.then.completed (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:231:10)
+          at _callCircusTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:252:3)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:126:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at run (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:71:3)
+          at runAndTransformResultsToJestFormat (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+          at jestAdapter (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+          at runTestInternal (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:367:16)
+          at runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:444:34)
+          at Object.worker (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\testWorker.js:106:12)
+
+      58 |     res.json({ pfData, pfUrl: PF_URL });
+      59 |   } catch (err) {
+    > 60 |     console.error('[initiatePayment]', err);
+         |             ^
+      61 |     res.status(500).json({ message: err.message });
+      62 |   }
+      63 | };
+
+      at error (src/controllers/paymentController.js:60:13)
+      at Object.<anonymous> (src/__tests__/paymentController.test.js:141:7)
+
+    console.error
+      [handleNotify] Signature mismatch
+
+      76 |     const expectedSig = buildSignature(data, PF_PASSPHRASE);
+      77 |     if (receivedSig !== expectedSig) {
+    > 78 |       console.error('[handleNotify] Signature mismatch');
+         |               ^
+      79 |       return res.status(400).send('Invalid signature');
+      80 |     }
+      81 |
+
+      at error (src/controllers/paymentController.js:78:15)
+      at Object.handleNotify (src/__tests__/paymentController.test.js:161:13)
+
+    console.log
+      Γ£à Payment confirmed for order order123
+
+      at log (src/controllers/paymentController.js:88:17)
+
+    console.error
+      [handleNotify] Error: DB error
+          at Object.<anonymous> (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\src\__tests__\paymentController.test.js:232:40)
+          at Promise.then.completed (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:231:10)
+          at _callCircusTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:252:3)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:126:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at run (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:71:3)
+          at runAndTransformResultsToJestFormat (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+          at jestAdapter (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+          at runTestInternal (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:367:16)
+          at runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:444:34)
+          at Object.worker (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\testWorker.js:106:12)
+
+      92 |     res.status(200).send('OK');
+      93 |   } catch (err) {
+    > 94 |     console.error('[handleNotify]', err);
+         |             ^
+      95 |     res.status(500).send('Error');
+      96 |   }
+      97 | };
+
+      at error (src/controllers/paymentController.js:94:13)
+      at Object.<anonymous> (src/__tests__/paymentController.test.js:243:7)
+
+    console.log
+      Γ£à [verifyPayment] Promoted order order123 to paid (ITN fallback)
+
+      at log (src/controllers/paymentController.js:115:15)
+
+    console.error
+      [verifyPayment] Error: DB error
+          at Object.<anonymous> (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\src\__tests__\paymentController.test.js:330:40)
+          at Promise.then.completed (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:231:10)
+          at _callCircusTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:252:3)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:126:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at run (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:71:3)
+          at runAndTransformResultsToJestFormat (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+          at jestAdapter (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+          at runTestInternal (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:367:16)
+          at runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:444:34)
+          at Object.worker (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\testWorker.js:106:12)
+
+      118 |     res.json({ status: order.status });
+      119 |   } catch (err) {
+    > 120 |     console.error('[verifyPayment]', err);
+          |             ^
+      121 |     res.status(500).json({ message: err.message });
+      122 |   }
+      123 | };
+
+      at error (src/controllers/paymentController.js:120:13)
+      at Object.<anonymous> (src/__tests__/paymentController.test.js:338:7)
+
+PASS __tests__/sample.test.js
+PASS src/__tests__/vendorController.test.js
+  ΓùÅ Console
+
+    console.error
+      updateVendorProfile error: Error: DB error
+          at Object.<anonymous> (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\src\__tests__\vendorController.test.js:198:50)
+          at Promise.then.completed (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:231:10)
+          at _callCircusTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:252:3)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:126:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at run (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:71:3)
+          at runAndTransformResultsToJestFormat (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+          at jestAdapter (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+          at runTestInternal (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:367:16)
+          at runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:444:34)
+          at Object.worker (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\testWorker.js:106:12)
+
+      79 |     res.json(vendor);
+      80 |   } catch (err) {
+    > 81 |     console.error("updateVendorProfile error:", err);
+         |             ^
+      82 |     res.status(500).json({ message: err.message });
+      83 |   }
+      84 | };
+
+      at error (src/controllers/vendorController.js:81:13)
+      at Object.<anonymous> (src/__tests__/vendorController.test.js:203:7)
+
+PASS src/__tests__/Reviewcontroller.test.js
+PASS src/__tests__/orderController.test.js
+PASS src/__tests__/appealController.test.js
+  ΓùÅ Console
+
+    console.error
+      submitAppeal error: Error: DB error
+          at Object.<anonymous> (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\src\__tests__\appealController.test.js:147:45)
+          at Promise.then.completed (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:231:10)
+          at _callCircusTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:252:3)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:126:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at run (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:71:3)
+          at runAndTransformResultsToJestFormat (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+          at jestAdapter (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+          at runTestInternal (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:367:16)
+          at runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:444:34)
+          at Object.worker (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\testWorker.js:106:12)
+
+      68 |     return res.status(201).json({ message: "Appeal submitted successfully.", appealId: appeal._id });
+      69 |   } catch (err) {
+    > 70 |     console.error("submitAppeal error:", err);
+         |             ^
+      71 |     return res.status(500).json({ message: err.message });
+      72 |   }
+      73 | };
+
+      at error (src/controllers/appealController.js:70:13)
+      at Object.<anonymous> (src/__tests__/appealController.test.js:156:7)
+
+PASS src/__tests__/adminController.test.js
+  ΓùÅ Console
+
+    console.log
+       Looking up admin with authProviderId: auth0|123
+
+      at log (src/controllers/adminController.js:16:13)
+
+    console.log
+       All admins in DB: [
+        {
+          "authProviderId": "auth0|123",
+          "email": "admin@test.com"
+        }
+      ]
+
+      at log (src/controllers/adminController.js:19:13)
+
+    console.log
+       Match found: admin@test.com
+
+      at log (src/controllers/adminController.js:22:13)
+
+    console.log
+       Looking up admin with authProviderId: auth0|999
+
+      at log (src/controllers/adminController.js:16:13)
+
+    console.log
+       All admins in DB: []
+
+      at log (src/controllers/adminController.js:19:13)
+
+    console.log
+       Match found: NONE
+
+      at log (src/controllers/adminController.js:22:13)
+
+    console.log
+       Looking up admin with authProviderId: auth0|123
+
+      at log (src/controllers/adminController.js:16:13)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "Email send failed: connect ECONNREFUSED 127.0.0.1:587".
+
+      21 |     await getTransporter().sendMail(options);
+      22 |   } catch (err) {
+    > 23 |     console.error("Email send failed:", err.message);
+         |             ^
+      24 |   }
+      25 | };
+      26 |
+
+      at console.error (node_modules/@jest/console/build/BufferedConsole.js:127:10)
+      at error (src/controllers/appealController.js:23:13)
+
+PASS src/__tests__/studentController.test.js
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "Email send failed: connect ECONNREFUSED 127.0.0.1:587".
+
+      21 |     await getTransporter().sendMail(options);
+      22 |   } catch (err) {
+    > 23 |     console.error("Email send failed:", err.message);
+         |             ^
+      24 |   }
+      25 | };
+      26 |
+
+      at console.error (node_modules/@jest/console/build/BufferedConsole.js:127:10)
+      at error (src/controllers/appealController.js:23:13)
+
+PASS src/__tests__/auth.routes.test.js
+  ΓùÅ Console
+
+    console.error
+      Sync error: Error: DB error
+          at Object.<anonymous> (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\src\__tests__\auth.routes.test.js:82:39)
+          at Promise.then.completed (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:231:10)
+          at _callCircusTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:252:3)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:126:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at run (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:71:3)
+          at runAndTransformResultsToJestFormat (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+          at jestAdapter (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+          at runTestInternal (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:367:16)
+          at runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:444:34)
+          at Object.worker (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\testWorker.js:106:12)
+
+      62 |
+      63 |   } catch (err) {
+    > 64 |     console.error("Sync error:", err);
+         |             ^
+      65 |     res.status(500).json({ error: "Failed to sync user" });
+      66 |   }
+      67 | });
+
+      at error (src/routes/auth.routes.js:64:13)
+      at Object.<anonymous> (src/__tests__/auth.routes.test.js:85:5)
+
+    console.error
+      Student register error: Error: Unexpected
+          at Object.<anonymous> (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\src\__tests__\auth.routes.test.js:272:38)
+          at Promise.then.completed (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:231:10)
+          at _callCircusTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:252:3)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:126:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at run (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:71:3)
+          at runAndTransformResultsToJestFormat (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+          at jestAdapter (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+          at runTestInternal (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:367:16)
+          at runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:444:34)
+          at Object.worker (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\testWorker.js:106:12)
+
+      94 |       return res.status(409).json({ error: "Email already registered" });
+      95 |     }
+    > 96 |     console.error("Student register error:", err);
+         |             ^
+      97 |     res.status(500).json({ error: "Failed to register student" });
+      98 |   }
+      99 | });
+
+      at error (src/routes/auth.routes.js:96:13)
+      at Object.<anonymous> (src/__tests__/auth.routes.test.js:275:5)
+
+    console.error
+      Vendor register error: Error: Unexpected
+          at Object.<anonymous> (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\src\__tests__\auth.routes.test.js:312:37)
+          at Promise.then.completed (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:231:10)
+          at _callCircusTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:252:3)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:126:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at run (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:71:3)
+          at runAndTransformResultsToJestFormat (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+          at jestAdapter (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+          at runTestInternal (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:367:16)
+          at runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:444:34)
+          at Object.worker (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\testWorker.js:106:12)
+
+      143 |       return res.status(409).json({ error: "Email already registered" });
+      144 |     }
+    > 145 |     console.error("Vendor register error:", err);
+          |             ^
+      146 |     res.status(500).json({ error: "Failed to register vendor" });
+      147 |   }
+      148 | });
+
+      at error (src/routes/auth.routes.js:145:13)
+      at Object.<anonymous> (src/__tests__/auth.routes.test.js:315:5)
+
+    console.error
+      Admin register error: Error: Unexpected
+          at Object.<anonymous> (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\src\__tests__\auth.routes.test.js:360:36)
+          at Promise.then.completed (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\utils.js:231:10)
+          at _callCircusTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:252:3)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:126:9)
+          at _runTestsForDescribeBlock (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:121:9)
+          at run (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\run.js:71:3)
+          at runAndTransformResultsToJestFormat (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+          at jestAdapter (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+          at runTestInternal (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:367:16)
+          at runTest (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\runTest.js:444:34)
+          at Object.worker (C:\Users\Afro-Samurai-29\Desktop\KuduDash\backend\node_modules\jest-runner\build\testWorker.js:106:12)
+
+      181 |       return res.status(409).json({ error: "Email already registered" });
+      182 |     }
+    > 183 |     console.error("Admin register error:", err);
+          |             ^
+      184 |     res.status(500).json({ error: "Failed to register admin" });
+      185 |   }
+      186 | });
+
+      at error (src/routes/auth.routes.js:183:13)
+      at Object.<anonymous> (src/__tests__/auth.routes.test.js:363:5)
+
+
+Test Suites: 1 skipped, 13 passed, 13 of 14 total
+Tests:       19 skipped, 204 passed, 223 total
+Snapshots:   0 total
+Time:        4.727 s, estimated 5 s
+Ran all test suites.

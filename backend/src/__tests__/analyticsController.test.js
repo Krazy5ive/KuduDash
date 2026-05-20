@@ -1,17 +1,5 @@
 // analyticsController.test.js
 // Sprint 4 — US5 (Admin Analytics), US6 (Vendor Overview), US7 (Student Overview)
-//
-// NOTE: These tests are skipped because analyticsController.js does not exist yet.
-// The overview/analytics logic currently lives inside vendorController.js,
-// studentController.js, and adminController.js.
-//
-// TO ACTIVATE THESE TESTS:
-// Option A — Create src/controllers/analyticsController.js and export:
-//   getAdminAnalytics, getVendorOverview, getStudentOverview
-//
-// Option B — Update the require() path and function names below to point to
-//   whichever existing controller handles this logic, then remove the
-//   describe.skip wrappers.
 
 jest.mock("../models/Order");
 jest.mock("../models/MenuItem");
@@ -20,18 +8,19 @@ jest.mock("../models/Student");
 
 const Order = require("../models/Order");
 
+const { getAdminAnalytics, getVendorOverview, getStudentOverview } =
+  require("../controllers/analyticsController");
+
 const mockRes = () => {
   const res = {};
   res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
+  res.json   = jest.fn().mockReturnValue(res);
   return res;
 };
 
-// ─── Uncomment and update this require once the controller exists ─────────
-// const { getAdminAnalytics, getVendorOverview, getStudentOverview } =
-//   require("../controllers/analyticsController");
+// ─── US5: Admin Analytics ─────────────────────────────────────────────────────
 
-describe.skip("Admin Analytics (US5)", () => {
+describe("Admin Analytics (US5)", () => {
   afterEach(() => jest.clearAllMocks());
 
   // UAT 1 — Total sales over time
@@ -122,7 +111,9 @@ describe.skip("Admin Analytics (US5)", () => {
   });
 });
 
-describe.skip("Vendor Overview Dashboard (US6)", () => {
+// ─── US6: Vendor Overview Dashboard ──────────────────────────────────────────
+
+describe("Vendor Overview Dashboard (US6)", () => {
   afterEach(() => jest.clearAllMocks());
 
   // UAT 1 — Revenue and order summary
@@ -184,7 +175,7 @@ describe.skip("Vendor Overview Dashboard (US6)", () => {
     await getVendorOverview(req, res);
 
     const aggregateCall = Order.aggregate.mock.calls[0][0];
-    const matchStage = aggregateCall.find((stage) => stage.$match);
+    const matchStage    = aggregateCall.find((stage) => stage.$match);
     expect(JSON.stringify(matchStage)).toContain("vendor123");
   });
 
@@ -200,7 +191,9 @@ describe.skip("Vendor Overview Dashboard (US6)", () => {
   });
 });
 
-describe.skip("Student Overview Dashboard (US7)", () => {
+// ─── US7: Student Overview Dashboard ─────────────────────────────────────────
+
+describe("Student Overview Dashboard (US7)", () => {
   afterEach(() => jest.clearAllMocks());
 
   // UAT 1 — Total orders and spend summary
@@ -275,7 +268,7 @@ describe.skip("Student Overview Dashboard (US7)", () => {
     await getStudentOverview(req, res);
 
     const aggregateCall = Order.aggregate.mock.calls[0][0];
-    const matchStage = aggregateCall.find((stage) => stage.$match);
+    const matchStage    = aggregateCall.find((stage) => stage.$match);
     expect(JSON.stringify(matchStage)).toContain("student123");
   });
 

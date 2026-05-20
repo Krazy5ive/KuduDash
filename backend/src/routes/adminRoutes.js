@@ -1,16 +1,19 @@
 // routes/adminRoutes.js
 const express = require("express");
-const router = express.Router();
-const {
-  getAllAdmins,
-  getAdminById,
-  createAdmin,
-  updateAdmin,
-} = require("../controllers/adminController");
+const router  = express.Router();
 
-router.get("/", getAllAdmins);
+const { getAllAdmins, getAdminById, createAdmin, updateAdmin } =
+  require("../controllers/adminController");
+
+const { getAdminAnalytics } =
+  require("../controllers/analyticsController");
+
+// Analytics — must come before /:id to avoid route clash
+router.get("/analytics", getAdminAnalytics);
+
+router.get("/",    getAllAdmins);
 router.get("/:id", getAdminById);
-router.post("/", createAdmin);
+router.post("/",   createAdmin);
 router.put("/:id", updateAdmin);
 
 module.exports = router;
