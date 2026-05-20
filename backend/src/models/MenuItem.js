@@ -17,7 +17,7 @@ const menuItemSchema = new Schema(
 
         allergens: {
             type: [String],
-            enum: ["nuts", "gluten", "eggs", "soy", "shellfish", "fish", "sesame"],
+            enum: ["Cow's Milk", "Eggs", "Fish", "Tree Nuts", "Peanuts", "Soybeans", "Cereals Containing Gluten", "Crustaceans And Molluscs"],
             default: [],
         },
 
