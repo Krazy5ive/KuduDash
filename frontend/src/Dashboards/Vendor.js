@@ -114,6 +114,8 @@ const Vendor = () => {
 
   const fileInputRef = useRef(null);
 
+  const returnTo = process.env.REACT_APP_LOGOUT_URL || window.location.origin;
+
   const getToken = useCallback(
     () => getAccessTokenSilently({
       authorizationParams: { audience: process.env.REACT_APP_AUTH0_AUDIENCE },
@@ -555,7 +557,7 @@ const Vendor = () => {
                 {appealError && <p className="kd-form-error" role="alert" style={{ marginBottom: 16 }}>{appealError}</p>}
                 <footer style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
                   <button className="kd-btn primary" onClick={handleSubmitAppeal} disabled={!appealMessage.trim()} style={{ width: "100%" }}>Submit appeal</button>
-                  <button className="kd-btn ghost" onClick={() => logout({ returnTo: window.location.origin })} style={{ width: "100%" }}>Sign out</button>
+                  <button className="kd-btn ghost" onClick={() => logout({ returnTo })} style={{ width: "100%" }}>Sign out</button>
                 </footer>
               </>
             )}
@@ -571,7 +573,7 @@ const Vendor = () => {
                     Appeal submitted. Check your email for confirmation — our team will be in touch soon.
                   </p>
                 </section>
-                <button className="kd-btn ghost" onClick={() => logout({ returnTo: window.location.origin })} style={{ width: "100%" }}>Sign out</button>
+                <button className="kd-btn ghost" onClick={() => logout({ returnTo })} style={{ width: "100%" }}>Sign out</button>
               </>
             )}
             {appealState === "duplicate" && (
@@ -583,7 +585,7 @@ const Vendor = () => {
                     You already have a pending appeal. Our team will review it shortly.
                   </p>
                 </section>
-                <button className="kd-btn ghost" onClick={() => logout({ returnTo: window.location.origin })} style={{ width: "100%" }}>Sign out</button>
+                <button className="kd-btn ghost" onClick={() => logout({ returnTo })} style={{ width: "100%" }}>Sign out</button>
               </>
             )}
             {appealState === "rejected" && (
@@ -635,7 +637,7 @@ const Vendor = () => {
                   </button>
                   <button
                     className="kd-btn ghost"
-                    onClick={() => logout({ returnTo: window.location.origin })}
+                    onClick={() => logout({ returnTo })}
                     style={{ width: "100%" }}
                   >
                     Sign out
