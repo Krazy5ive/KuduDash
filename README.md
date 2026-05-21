@@ -69,20 +69,103 @@ The system follows a client-server architecture. Clients interact with the front
 
 ```
 KuduDash/
-├── backend/      # Node.js/Express API
-│   ├── app.js
-│   ├── server.js
+├── .github/
+│   └── workflows/
+│       ├── coverage.yml                    # Runs Jest & uploads coverage reports to Codecov on push
+│       └── main_kududash.yml               # CI/CD pipeline that builds & deploys the app to Azure
+│
+├── backend/                                # Node.js/Express REST API
+│   ├── server.js                           # HTTP server entry point — binds Express app to a port
+│   ├── app.js                              # Express app setup — registers middleware, routes & CORS
+│   ├── package.json                        # Backend dependencies & npm scripts (start, test, dev)
+│   │
 │   └── src/
-│       ├── controllers/      # Business logic
-│       ├── models/           # Database models
-│       ├── routes/           # API routes
-│       ├── middleware/       # Auth middleware
-│       └── tests/            # Jest test suites
-└── frontend/                 # React application
+│       ├── controllers/                    # Business logic layer — handles requests & responses
+│       │   ├── adminController.js          # Admin CRUD — manage users, vendors & platform settings
+│       │   ├── analyticsController.js      # Aggregates sales, order volume & revenue data for vendors
+│       │   ├── appealController.js         # Handles vendor/student appeals & triggers email notifications
+│       │   ├── cartController.js           # Add, update & remove items from a student's cart
+│       │   ├── menuItemController.js       # Vendor menu CRUD — create, edit, delete & toggle items
+│       │   ├── orderController.js          # Place orders, update order status & fetch order history
+│       │   ├── paymentController.js        # Generates PayFast payment requests & handles callbacks
+│       │   ├── reviewController.js         # Submit & retrieve student reviews for vendors
+│       │   ├── studentController.js        # Student profile management & account operations
+│       │   └── vendorController.js         # Vendor profile management & account operations
+│       │
+│       ├── models/                         # Mongoose schemas — define MongoDB document structure
+│       │   ├── Admin.js                    # Admin schema — stores admin credentials & role flags
+│       │   ├── Appeal.js                   # Appeal schema — stores appeal content, status & timestamps
+│       │   ├── Cart.js                     # Cart schema — stores a student's active cart & line items
+│       │   ├── MenuItem.js                 # Menu item schema — name, price, category, allergens & availability
+│       │   ├── Order.js                    # Order schema — items ordered, totals, status & student reference
+│       │   ├── Review.js                   # Review schema — star rating, comment, student & vendor references
+│       │   ├── Student.js                  # Student schema — profile info, Auth0 ID & order history refs
+│       │   └── Vendor.js                   # Vendor schema — store name, profile info & Auth0 ID
+│       │
+│       ├── routes/                         # Express routers — map HTTP endpoints to controllers
+│       │   ├── auth.routes.js              # Auth endpoints — register & sync Auth0 users on first login
+│       │   ├── adminRoutes.js              # /api/admin/* — admin-only platform management endpoints
+│       │   ├── appealRoutes.js             # /api/appeals/* — submit & resolve appeal requests
+│       │   ├── cartRoutes.js               # /api/cart/* — cart read & write endpoints
+│       │   ├── menuItemRoutes.js           # /api/menu/* — menu item CRUD & availability toggle
+│       │   ├── orderRoutes.js              # /api/orders/* — place, update & retrieve orders
+│       │   ├── paymentRoutes.js            # /api/payment/* — initiate payments & receive PayFast ITN
+│       │   ├── reviewRoutes.js             # /api/reviews/* — submit & fetch vendor reviews
+│       │   ├── studentRoutes.js            # /api/students/* — student profile read & update endpoints
+│       │   └── vendorRoutes.js             # /api/vendors/* — vendor profile read & update endpoints
+│       │
+│       ├── middleware/
+│       │   └── auth.js                     # Validates Auth0 JWT on protected routes; rejects bad tokens
+│       │
+│       └── __tests__/                      # Jest unit & integration test suites (98% coverage)
+│           ├── adminController.test.js      # Tests admin user management & platform control logic
+│           ├── analyticsController.test.js  # Tests revenue aggregation & sales data calculations
+│           ├── appealController.test.js     # Tests appeal submission, status updates & email triggers
+│           ├── auth.routes.test.js          # Tests Auth0 user registration & login sync endpoints
+│           ├── cartController.test.js       # Tests add, update, remove & fetch cart operations
+│           ├── menuItemAllergens.test.js    # Tests allergen filtering & allergen field validation
+│           ├── menuItemAvailability.test.js # Tests toggling item availability on & off
+│           ├── menuItemController.test.js   # Tests full menu item CRUD operations
+│           ├── orderController.test.js      # Tests order placement, status transitions & retrieval
+│           ├── paymentController.test.js    # Tests PayFast payload generation & ITN callback handling
+│           ├── Reviewcontroller.test.js     # Tests review submission, retrieval & validation rules
+│           ├── studentController.test.js    # Tests student profile creation & update operations
+│           └── vendorController.test.js     # Tests vendor profile creation & update operations
+│
+└── frontend/                               # React 18 single-page application
+    ├── package.json                        # Frontend dependencies & scripts (start, build, test)
+    ├── public/
+    │   └── index.html                      # HTML shell — root div where React mounts
+    │
     └── src/
-        ├── Dashboards/       # Admin, Student, Vendor dashboards
-        ├── Cart/             # Cart & Checkout
-        └── payment/          # Payment & Vendor Earnings          
+        ├── App.js                          # Root component — defines all client-side routes via React Router
+        ├── index.js                        # React DOM entry point — renders App into index.html
+        ├── api.js                          # Axios instance — sets base URL & attaches Auth0 token to requests
+        ├── ProtectedRoute.js               # HOC that redirects unauthenticated users to the login page
+        ├── Login.js                        # Login page — triggers Auth0 Universal Login redirect
+        ├── Callback.js                     # Handles Auth0 redirect after login & syncs user to the backend
+        ├── Vibe.js                         # Public landing page — app intro shown before login
+        │
+        ├── Dashboards/                     # Role-specific dashboard views
+        │   ├── Student.js                  # Student dashboard — browse vendor menus & add items to cart
+        │   ├── Vendor.js                   # Vendor dashboard — view store overview & navigate to tools
+        │   ├── Admin.js                    # Admin dashboard — view & manage all users and vendors
+        │   ├── OrderManagement.js          # Vendor view — manage incoming orders & update their status
+        │   ├── OrderTracking.js            # Student view — track live status of placed orders
+        │   ├── ProfilePanel.js             # Shared slide-in panel for viewing & editing user profiles
+        │   └── Analytics.js               # Vendor view — charts & tables for sales & revenue analytics
+        │
+        ├── Cart/                           # Shopping cart feature
+        │   ├── CartContext.js              # React Context — global cart state shared across all components
+        │   ├── Cart.js                     # Cart page — displays items, quantities & order total
+        │   └── Checkout.js                 # Checkout page — confirms order details & initiates payment
+        │
+        ├── payment/                        # Payment feature
+        │   ├── Payment.js                  # Builds & submits the PayFast payment form on checkout
+        │   └── VendorEarnings.js           # Vendor earnings page — lists completed payments & totals
+        │
+        ├── ReviewForm.js                   # Form for students to submit a star rating & comment for a vendor
+        └── VendorReviews.js                # Displays all reviews received by a vendor with ratings summary
 ```
 ---
 
