@@ -1038,7 +1038,7 @@ const AppealsPage = () => {
                 </td>
                 <td>{appeal.vendor?.email || "—"}</td>
                 <td style={{ maxWidth: 180, color: "var(--color-text-secondary)", fontSize: 13 }}>
-                  {appeal.vendor?.statusReason || "—"}
+                  {appeal.suspensionReason || appeal.vendor?.statusReason || "—"}
                 </td>
                 <td>{formatDate(appeal.createdAt)}</td>
                 <td>
@@ -1101,7 +1101,7 @@ const AppealsPage = () => {
                 ["Submitted",         formatDate(viewingAppeal.createdAt)],
                 ["Appeal status",     viewingAppeal.status],
                 ["Vendor status",     viewingAppeal.vendor?.status],
-                ["Suspension reason", viewingAppeal.vendor?.statusReason || "—"],
+                ["Suspension reason", viewingAppeal.suspensionReason || viewingAppeal.vendor?.statusReason || "—"],
               ].map(([label, value]) => (
                 <li className="kd-detail-row" key={label}>
                   <p className="kd-detail-label">{label}</p>

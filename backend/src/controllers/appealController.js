@@ -1,8 +1,6 @@
 const Appeal = require("../models/Appeal");
 const Vendor = require("../models/Vendor");
 
-// Nodemailer is lazy-loaded so missing SMTP env vars never crash the module
-// on require() — which would kill the Jest worker process.
 let _transporter = null;
 const getTransporter = () => {
   if (_transporter) return _transporter;
@@ -33,7 +31,7 @@ const submitAppeal = async (req, res) => {
       return res.status(400).json({ message: "Appeal message is required." });
     }
 
-    const vendor = await Vendor.findById(vendorId).select("status businessName email");
+    const vendor = await Vendor.findById(vendorId).select("status businessName email statusReason");
     if (!vendor) return res.status(404).json({ message: "Vendor not found." });
 
     if (vendor.status !== "suspended") {
@@ -47,7 +45,11 @@ const submitAppeal = async (req, res) => {
       });
     }
 
-    const appeal = await Appeal.create({ vendor: vendorId, message: message.trim() });
+    const appeal = await Appeal.create({
+      vendor:           vendorId,
+      message:          message.trim(),
+      suspensionReason: vendor.statusReason || null,
+    });
 
     sendMail({
       from: `"KuduDash" <${process.env.SMTP_USER}>`,
