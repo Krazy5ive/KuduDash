@@ -34,7 +34,7 @@ const vendorSchema = new Schema(
         //account status - managed by admin
         status: {type: String,
             enum: ["pending", "active", "suspended"],
-            default: "pending",
+            default: "active",
         },
 
         //admin note when suspending
