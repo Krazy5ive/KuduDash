@@ -511,14 +511,6 @@ const StudentsPage = () => {
     return matchSearch && (filterStatus === "all" || studentStatus === filterStatus);
   }), [students, search, filterStatus]);
 
-  const toggleStatus = (id) => {
-    fetch(`${API_BASE_URL}/api/students/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive: !students.find((s) => s._id === id)?.isActive }),
-    }).then((res) => res.json()).then((updated) => setStudents((prev) => prev.map((s) => s._id === id ? updated : s)));
-  };
-
   return (
     <section aria-label="Students management">
       <StatsRow items={students.map((s) => ({ status: s.isActive ? "active" : "inactive" }))} type="students" />
@@ -546,9 +538,6 @@ const StudentsPage = () => {
                 <td>
                   <section className="kd-table-actions">
                     <button className="kd-action-btn view" onClick={() => setViewingStudent(student)}>View</button>
-                    <button className={`kd-action-btn ${student.isActive ? "suspend" : "restore"}`} onClick={() => toggleStatus(student._id)}>
-                      {student.isActive ? "Suspend" : "Restore"}
-                    </button>
                   </section>
                 </td>
               </tr>
